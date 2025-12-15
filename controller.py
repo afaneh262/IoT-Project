@@ -75,7 +75,17 @@ class SmartHomeController:
         self._execute_actuator_commands(decisions)
         
         # Phase 4: Update energy system
-        total_consumption = sum(act.get_consumption() for act in self.actuators)
+        # Calculate total consumption from actuators
+        actuator_consumption = sum(act.get_consumption() for act in self.actuators)
+        
+        # Add base load (always-on devices: router, modem, security system, standby power, etc.)
+        base_load = 150  # Watts for always-on devices
+        
+        # Add refrigerator/freezer baseline (they're always on, cycling)
+        fridge_load = 150  # Average continuous load
+        
+        total_consumption = actuator_consumption + base_load + fridge_load
+        
         self.energy_system.update_generation(time_hour, season)
         net_power = self.energy_system.update_battery(total_consumption)
         

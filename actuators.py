@@ -287,19 +287,33 @@ class RefrigeratorActuator(Actuator):
         super().__init__(actuator_id, room, "Refrigerator")
         self.power_consumption = POWER_CONSUMPTION["Refrigerator"]
         self.temperature = 4.0  # Celsius
-        self.compressor_running = False
+        self.compressor_running = True
         self.state = True  # Always "on"
+        self.always_on = True  # Flag to prevent turning off
+        self.cycle_counter = 0  # Track compressor cycles
         
+    def set_state(self, state: bool):
+        """Override to prevent turning off"""
+        if not state:
+            # Cannot turn off refrigerator
+            return
+        self.state = True
+    
     def get_consumption(self) -> float:
-        """Compressor cycles on/off"""
-        # Simulate compressor cycling
-        import random
-        if random.random() < 0.4:  # 40% duty cycle
+        """Compressor cycles on/off - realistic duty cycle"""
+        # Refrigerator compressor runs in cycles: 8 min on, 12 min off (40% duty cycle)
+        # Each simulation cycle is 15 minutes, so we simulate realistic cycling
+        self.cycle_counter += 1
+        
+        # Cycle pattern: ON for 2 cycles, OFF for 3 cycles (40% duty cycle)
+        cycle_position = self.cycle_counter % 5
+        
+        if cycle_position < 2:  # First 2 cycles: compressor ON
             self.compressor_running = True
-            return self.power_consumption
-        else:
+            return self.power_consumption  # Full power when compressor runs
+        else:  # Next 3 cycles: compressor OFF
             self.compressor_running = False
-            return self.power_consumption * 0.1  # Standby power
+            return self.power_consumption * 0.15  # Standby power (lights, controls)
 
 class MicrowaveActuator(Actuator):
     """Controls microwave oven"""

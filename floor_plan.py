@@ -1,8 +1,18 @@
-"""
+"""Floor Plan Renderer
 Realistic Floor Plan Rendering for Smart Home
 """
 
-import pygame
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except ImportError:
+    PYGAME_AVAILABLE = False
+    # Create dummy pygame module for type hints
+    class DummyPygame:
+        class Surface:
+            pass
+    pygame = DummyPygame()
+
 import math
 from typing import Tuple, List, TYPE_CHECKING
 from config import *
@@ -19,6 +29,8 @@ class FloorPlanRenderer:
     """Renders realistic floor plan with rooms, doors, and infrastructure"""
     
     def __init__(self, screen: pygame.Surface):
+        if not PYGAME_AVAILABLE:
+            raise ImportError("FloorPlanRenderer requires pygame")
         self.screen = screen
         self.font_small = pygame.font.Font(None, 16)
         self.font_medium = pygame.font.Font(None, 20)

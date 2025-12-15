@@ -48,6 +48,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+cover/
 
 # Translations
 *.mo
@@ -103,6 +104,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+anaconda3/
+miniconda3/
 
 # Spyder project settings
 .spyderproject
@@ -122,20 +125,49 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
 # IDEs
 .vscode/
-.idea/
 *.swp
 *.swo
 *~
+.DS_Store
 
 # OS
 .DS_Store
 Thumbs.db
+*.bak
 
-# IoT specific
+# Project specific
 *.db
 *.sqlite
 config.ini
 secrets.json
 *.log
+simulation_data/
+exports/
+screenshots/
+
+# Temporary files
+*.tmp
+*.temp
+~*
+
+# ============================================================================
+# MongoDB and Docker
+# ============================================================================
+
+# MongoDB data directories (if running locally without Docker)
+mongodb_data/
+mongodb_backup/
+
+# Docker volumes are managed by Docker Compose, but ignore any local backups
+*.dump
+*.bsontmp
+*.temp
+~*

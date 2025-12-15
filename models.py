@@ -2,7 +2,12 @@
 Data Models for Smart Home IoT Simulation
 """
 
-import pygame
+try:
+    import pygame
+    PYGAME_AVAILABLE = True
+except ImportError:
+    PYGAME_AVAILABLE = False
+
 from datetime import datetime
 from typing import List, Tuple, Optional
 from config import DeviceStatus
@@ -36,9 +41,13 @@ class Room:
         """Returns the center point of the room"""
         return (self.x + self.width // 2, self.y + self.height // 2)
     
-    def get_rect(self) -> pygame.Rect:
-        """Returns pygame rect for the room"""
-        return pygame.Rect(self.x, self.y, self.width, self.height)
+    def get_rect(self):
+        """Returns pygame rect for the room (only if pygame is available)"""
+        if PYGAME_AVAILABLE:
+            return pygame.Rect(self.x, self.y, self.width, self.height)
+        else:
+            # Return a simple tuple representation
+            return (self.x, self.y, self.width, self.height)
     
     def contains_point(self, x: int, y: int) -> bool:
         """Check if a point is inside the room"""
