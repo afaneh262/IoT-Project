@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sustainable Smart Home IoT System - Slides</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          },
+          boxShadow: {
+            glow: '0 20px 60px rgba(37,99,235,.25)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    html, body { height: 100%; }
+    body { overflow: hidden; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    .slide-enter {
+      opacity: 0;
+      transform: translateX(48px);
+    }
+    .slide-enter-active {
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 450ms ease, transform 450ms ease;
+    }
+    .slide-exit {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .slide-exit-active {
+      opacity: 0;
+      transform: translateX(-48px);
+      transition: opacity 450ms ease, transform 450ms ease;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+  <div id="root" class="h-full"></div>
+
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    Chart.defaults.font.family = "ui-sans-serif, system-ui, Segoe UI, Tahoma, Geneva, Verdana, sans-serif";
+    Chart.defaults.font.size = 13;
+    Chart.defaults.color = '#334155';
+    Chart.defaults.borderColor = 'rgba(148, 163, 184, .35)';
+
+    function classNames(...parts) {
+      return parts.filter(Boolean).join(' ');
+    }
+
+    function IconBadge({ children, className }) {
+      return (
+        <div className={classNames(
+          'inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xl shadow-[0_10px_30px_rgba(2,6,23,.08)]',
+          className
+        )}>
+          {children}
+        </div>
+      );
+    }
+
+    function Card({ title, icon, children, className }) {
+      return (
+        <div className={classNames(
+          'group rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(2,6,23,.10)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_18px_60px_rgba(37,99,235,.18)]',
+          className
+        )}>
+          <div className="flex items-start gap-4">
+            {icon ? (
+              <div className="shrink-0">
+                <IconBadge className="text-2xl">{icon}</IconBadge>
+              </div>
+            ) : null}
+            <div className="min-w-0">
+              {title ? (
+                <h3 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
+              ) : null}
+              <div className="mt-3 text-sm leading-6 text-slate-700">
+                {children}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Metric({ value, label }) {
+      return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
+          <div className="text-2xl font-semibold text-slate-900">{value}</div>
+          <div className="mt-1 text-xs text-slate-600">{label}</div>
+        </div>
+      );
+    }
+
+    function ScientificFooter() {
+      return (
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-[11px] text-slate-500">
+          <div className="min-w-0 truncate">
+            Units: kW (power), kWh (energy), ppm (CO₂), lux (illuminance). Models: occupancy-driven load scaling; fixed resource generation.
+          </div>
+          <div className="shrink-0 whitespace-nowrap">
+            Reference: IEEE-based smart home IoT architecture (implementation-aligned)
+          </div>
+        </div>
+      );
+    }
+
+    function ScenarioComparisonTable({ title, rows, highlight }) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold text-slate-900">{title}</div>
+            <div className="text-xs text-slate-500">Highlighted: {highlight} people</div>
+          </div>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Occ.</th>
+                  {rows.columns.map((c) => (
+                    <th key={c} className="px-3 py-2 font-semibold">{c}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {rows.data.map((r) => (
+                  <tr key={r.occ} className={r.occ === highlight ? 'bg-brand-50/60' : 'bg-white'}>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{r.occ}</td>
+                    {r.values.map((v, idx) => (
+                      <td key={idx} className="px-3 py-2 text-slate-700">{v}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
+    function SlideShell({ accent = 'from-brand-200 via-purple-200/60 to-emerald-200/60', children }) {
+      const normalizedAccent = accent.includes('from-slate-900') ? 'from-white via-brand-100/70 to-emerald-100/70' : accent;
+      return (
+        <div className="relative h-full w-full overflow-hidden">
+          <div className={classNames(
+            'pointer-events-none absolute inset-0 bg-gradient-to-br',
+            normalizedAccent
+          )} />
+          <div className="pointer-events-none absolute -top-24 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-brand-300/50 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 right-0 h-[420px] w-[420px] rounded-full bg-emerald-300/40 blur-3xl" />
+          <div className="relative mx-auto flex h-full max-w-7xl flex-col px-6 py-8 md:px-10 md:py-10 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+              {children}
+            </div>
+            <div className="shrink-0">
+              <ScientificFooter />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ChartCanvas({ id, config, active }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+
+      useEffect(() => {
+        if (!active) return;
+        const el = canvasRef.current;
+        if (!el) return;
+
+        if (chartRef.current) {
+          chartRef.current.destroy();
+          chartRef.current = null;
+        }
+
+        chartRef.current = new Chart(el, config);
+        return () => {
+          if (chartRef.current) {
+            chartRef.current.destroy();
+            chartRef.current = null;
+          }
+        };
+      }, [active, config]);
+
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-4">
+          <div className="relative h-[240px] md:h-[300px]">
+            <canvas id={id} ref={canvasRef} />
+          </div>
+        </div>
+      );
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function dailyProfileForScenario(s) {
+      return [
+        clamp(s.baseLoadKw, 1.2, 2.2),
+        clamp(s.baseLoadKw - 0.2, 1.0, 2.0),
+        clamp(s.avgLoadKw - 1.4, 1.5, 3.5),
+        clamp(s.avgLoadKw + 0.6, 3.5, 6.8),
+        clamp(s.avgLoadKw + 0.2, 3.0, 6.4),
+        clamp(s.avgLoadKw - 0.3, 2.8, 6.0),
+        clamp(s.avgLoadKw + 1.8, 4.2, 9.0),
+        clamp(s.peakLoadKw, 6.5, 12.8),
+        clamp(s.avgLoadKw - 1.0, 2.2, 5.2),
+      ];
+    }
+
+    function computeScenario(occupancy) {
+      const people = occupancy;
+      const baseLoadKw = 1.6; // fridge, networking, standby, etc.
+      const peopleLoadKw = people * 0.22; // devices + extra lighting + water heater usage proxy
+      const hvacFactor = 1 + (people - 4) * 0.08;
+      const avgLoadKw = clamp(baseLoadKw + peopleLoadKw + 1.6 * hvacFactor, 3.4, 6.2);
+      const peakLoadKw = clamp(avgLoadKw * 1.9, 7.2, 12.8);
+      const dailyKwh = Math.round(avgLoadKw * 24);
+
+      const messagesPerMin = Math.round(650 + (people - 4) * 90); // occupancy increases activity events
+      const edgeNoiseReductionPct = clamp(18 + (people - 4) * 1.5, 18, 23);
+      const bandwidthReductionPct = edgeNoiseReductionPct;
+
+      const solarShare = clamp(73 - (people - 4) * 1.2, 68, 75);
+      const windShare = 100 - solarShare;
+
+      const selfSufficiencyPct = clamp(92 - (people - 4) * 2.5, 78, 92);
+
+      return {
+        people,
+        baseLoadKw: Number(baseLoadKw.toFixed(1)),
+        avgLoadKw: Number(avgLoadKw.toFixed(1)),
+        peakLoadKw: Number(peakLoadKw.toFixed(1)),
+        dailyKwh,
+        messagesPerMin,
+        bandwidthReductionPct: Number(bandwidthReductionPct.toFixed(0)),
+        solarShare: Number(solarShare.toFixed(0)),
+        windShare: Number(windShare.toFixed(0)),
+        selfSufficiencyPct: Number(selfSufficiencyPct.toFixed(0)),
+      };
+    }
+
+    function OccupancySelector({ value, onChange }) {
+      return (
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs text-slate-700 backdrop-blur">
+          <span className="font-semibold text-slate-900">Occupancy</span>
+          <div className="inline-flex gap-1">
+            {[4, 5, 6, 7].map((n) => (
+              <button
+                key={n}
+                onClick={() => onChange(n)}
+                className={classNames(
+                  'rounded-full px-2.5 py-1 transition',
+                  n === value ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                )}
+                type="button"
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <span className="text-slate-500">people</span>
+        </div>
+      );
+    }
+
+    function ProgressRow({ label, value, active }) {
+      const [width, setWidth] = useState('0%');
+
+      useEffect(() => {
+        if (!active) {
+          setWidth('0%');
+          return;
+        }
+        const t = setTimeout(() => setWidth(value), 150);
+        return () => clearTimeout(t);
+      }, [active, value]);
+
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-700">{label}</span>
+            <span className="text-slate-900 font-semibold">{value}</span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-slate-200">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-brand-500 transition-[width] duration-1000"
+              style={{ width }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    function SlidesApp() {
+      const [occupancy, setOccupancy] = useState(4);
+      const scenario = useMemo(() => computeScenario(occupancy), [occupancy]);
+
+      const slides = useMemo(() => {
+        const commonTitle = (
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs text-slate-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              IEEE Implementation • AI/ML • Renewable Energy
+            </div>
+          </div>
+        );
+
+        const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const baseSolar = [2850, 3200, 4100, 4500, 4900, 5200, 5400, 5100, 4600, 3900, 3100, 2700];
+        const baseWind = [1650, 1550, 1700, 1800, 1650, 1300, 1100, 1200, 1400, 1600, 1720, 1850];
+        const yearlyTotalKwh = baseSolar.reduce((a, b) => a + b, 0) + baseWind.reduce((a, b) => a + b, 0);
+        const occupancyLevels = [4, 5, 6, 7];
+        const scenarioByOcc = Object.fromEntries(occupancyLevels.map((o) => [o, computeScenario(o)]));
+
+        const yearlyConsumptionKwhByOcc = Object.fromEntries(
+          occupancyLevels.map((o) => [o, Math.round(scenarioByOcc[o].dailyKwh * 365)])
+        );
+
+        const monthlyConsumptionByOcc = Object.fromEntries(
+          occupancyLevels.map((o) => {
+            const scale = yearlyConsumptionKwhByOcc[o] / yearlyTotalKwh;
+            return [o, monthLabels.map((_, i) => Math.round((baseSolar[i] + baseWind[i]) * scale))];
+          })
+        );
+
+        const occColors = {
+          4: 'rgba(16, 185, 129, 1)',
+          5: 'rgba(59, 130, 246, 1)',
+          6: 'rgba(168, 85, 247, 1)',
+          7: 'rgba(239, 68, 68, 1)',
+        };
+
+        const energyGenerationConfig = {
+          type: 'bar',
+          data: {
+            labels: monthLabels,
+            datasets: [
+              {
+                label: 'Solar (kWh)',
+                data: baseSolar,
+                backgroundColor: 'rgba(251, 191, 36, 0.75)',
+                borderColor: 'rgba(251, 191, 36, 1)',
+                borderWidth: 2,
+              },
+              {
+                label: 'Wind (kWh)',
+                data: baseWind,
+                backgroundColor: 'rgba(59, 130, 246, 0.75)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 2,
+              },
+              ...occupancyLevels.map((o) => ({
+                label: `Consumption (kWh) • ${o} people`,
+                data: monthlyConsumptionByOcc[o],
+                type: 'line',
+                borderColor: occColors[o],
+                backgroundColor: 'rgba(15, 23, 42, 0)',
+                borderWidth: o === scenario.people ? 4 : 2,
+                tension: 0.35,
+                pointRadius: o === scenario.people ? 3 : 2,
+                pointHoverRadius: 4,
+                borderDash: o === 4 ? [] : [6, 4],
+                order: 0,
+              })),
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#334155' } },
+              title: { display: true, text: 'Generation vs Consumption (Occupancy Simulation)', color: '#0f172a' },
+            },
+            scales: {
+              x: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+              y: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+            },
+          },
+        };
+
+        const consumptionPatternConfig = {
+          type: 'line',
+          data: {
+            labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '24:00'],
+            datasets: occupancyLevels.map((o) => ({
+              label: `Load (kW) • ${o} people`,
+              data: dailyProfileForScenario(scenarioByOcc[o]),
+              borderColor: occColors[o],
+              backgroundColor: 'rgba(15, 23, 42, 0)',
+              borderWidth: o === scenario.people ? 4 : 2,
+              tension: 0.4,
+              pointRadius: o === scenario.people ? 3 : 2,
+              pointHoverRadius: 4,
+              fill: false,
+              borderDash: o === 4 ? [] : [6, 4],
+            })),
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#334155' } },
+              title: { display: true, text: 'Daily Load Profiles (Occupancy Simulation)', color: '#0f172a' },
+            },
+            scales: {
+              x: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+              y: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+            },
+          },
+        };
+
+        const mlPerformanceConfig = {
+          type: 'radar',
+          data: {
+            labels: ['HVAC', 'Lighting', 'Irrigation', 'Ventilation', 'Alarm'],
+            datasets: [
+              {
+                label: 'Accuracy (%)',
+                data: [94.2, 96.8, 91.5, 90.8, 89.2],
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderColor: 'rgba(16, 185, 129, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+              },
+              {
+                label: 'Precision (%)',
+                data: [92.5, 95.2, 89.8, 88.5, 87.1],
+                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                borderColor: 'rgba(168, 85, 247, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#334155' } },
+              title: { display: true, text: 'Random Forest Model Performance', color: '#0f172a' },
+            },
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { color: '#334155' },
+                grid: { color: 'rgba(148,163,184,.35)' },
+                pointLabels: { color: '#0f172a' },
+              },
+            },
+          },
+        };
+
+        const batteryPerformanceConfig = {
+          type: 'line',
+          data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [
+              {
+                label: 'Battery Health (%)',
+                data: [100, 99.8, 99.6, 99.4, 99.2, 99.0, 98.8, 98.6, 98.5, 98.3, 98.2, 98.2],
+                borderColor: 'rgba(16, 185, 129, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                borderWidth: 3,
+                tension: 0.35,
+              },
+              {
+                label: 'Avg State of Charge (%)',
+                data: [68, 65, 72, 75, 78, 70, 65, 67, 73, 76, 71, 69],
+                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                borderWidth: 3,
+                tension: 0.35,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#334155' } },
+              title: { display: true, text: 'Battery System Performance (12 Months)', color: '#0f172a' },
+            },
+            scales: {
+              x: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+              y: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' }, min: 0, max: 100 },
+            },
+          },
+        };
+
+        const seasonalPerformanceConfig = {
+          type: 'doughnut',
+          data: {
+            labels: ['Winter', 'Spring', 'Summer', 'Autumn'],
+            datasets: [
+              {
+                label: 'Total Energy (kWh)',
+                data: [13200, 19200, 21200, 17200],
+                backgroundColor: [
+                  'rgba(147, 197, 253, 0.8)',
+                  'rgba(134, 239, 172, 0.8)',
+                  'rgba(251, 191, 36, 0.8)',
+                  'rgba(251, 146, 60, 0.8)',
+                ],
+                borderColor: [
+                  'rgba(59, 130, 246, 1)',
+                  'rgba(34, 197, 94, 1)',
+                  'rgba(245, 158, 11, 1)',
+                  'rgba(249, 115, 22, 1)',
+                ],
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: '#334155' } },
+              title: { display: true, text: 'Renewable Energy by Season', color: '#0f172a' },
+            },
+          },
+        };
+
+        const costSavingsConfig = {
+          type: 'line',
+          data: {
+            labels: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 10', 'Year 15', 'Year 20'],
+            datasets: [
+              {
+                label: 'Cumulative Savings ($)',
+                data: [8746, 18200, 28350, 39180, 50700, 102500, 155800, 175200],
+                borderColor: 'rgba(16, 185, 129, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+              },
+              {
+                label: 'Initial Investment ($)',
+                data: [45000, 45000, 45000, 45000, 45000, 45000, 45000, 45000],
+                borderColor: 'rgba(248, 113, 113, 1)',
+                backgroundColor: 'rgba(248, 113, 113, 0.12)',
+                borderWidth: 2,
+                borderDash: [10, 5],
+                fill: false,
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#334155' } },
+              title: { display: true, text: 'Return on Investment (20 Years)', color: '#0f172a' },
+            },
+            scales: {
+              x: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+              y: {
+                ticks: {
+                  color: '#334155',
+                  callback: (v) => '$' + Number(v).toLocaleString(),
+                },
+                grid: { color: 'rgba(148,163,184,.35)' },
+                beginAtZero: true,
+              },
+            },
+          },
+        };
+
+        const environmentalConfig = {
+          type: 'bar',
+          data: {
+            labels: ['CO₂ Avoided (tons)', 'Trees Equivalent', 'Cars Off Road', 'Coal Not Burned (tons)'],
+            datasets: [
+              {
+                label: 'Impact',
+                data: [32.5, 1500, 7, 16.2],
+                backgroundColor: [
+                  'rgba(16, 185, 129, 0.8)',
+                  'rgba(34, 197, 94, 0.8)',
+                  'rgba(59, 130, 246, 0.8)',
+                  'rgba(168, 85, 247, 0.8)',
+                ],
+                borderColor: [
+                  'rgba(16, 185, 129, 1)',
+                  'rgba(34, 197, 94, 1)',
+                  'rgba(59, 130, 246, 1)',
+                  'rgba(168, 85, 247, 1)',
+                ],
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: 'Annual Environmental Impact', color: '#0f172a' },
+            },
+            scales: {
+              x: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' } },
+              y: { ticks: { color: '#334155' }, grid: { color: 'rgba(148,163,184,.35)' }, beginAtZero: true },
+            },
+          },
+        };
+
+        return [
+          {
+            key: 'title',
+            accent: 'from-brand-200 via-violet-200/60 to-emerald-200/60',
+            render: () => (
+              <SlideShell accent="from-brand-200 via-violet-200/60 to-emerald-200/60">
+                <div className="flex items-center justify-between gap-4">
+                  {commonTitle}
+                  <div className="hidden md:flex items-center gap-2 text-xs text-slate-600">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Use ←/→ or Space</span>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Esc to exit full screen</span>
+                  </div>
+                </div>
+
+                <div className="mt-10 grid gap-8 md:grid-cols-5 md:items-center">
+                  <div className="md:col-span-3">
+                    <h1 className="text-4xl font-semibold tracking-tight text-slate-900 md:text-6xl">
+                      Sustainable Smart Home IoT System
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-base text-slate-700 md:text-lg">
+                      A complete IEEE paper implementation with AI/ML intelligence and renewable energy integration.
+                    </p>
+
+                    <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <Metric value="50+" label="IoT Sensors" />
+                      <Metric value="30+" label="Actuators" />
+                      <Metric value="100%" label="IEEE Compliance" />
+                      <Metric value="92%+" label="ML Accuracy" />
+                    </div>
+
+                    <div className="mt-8 flex flex-wrap gap-2 text-xs text-slate-600">
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">Edge + Gateway Intelligence</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">MongoDB Analytics</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">AES-256 + HMAC</span>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-6">
+                      <div className="text-sm text-slate-600">Snapshot</div>
+                      <div className="mt-3 space-y-4">
+                        <div>
+                          <div className="text-slate-900 font-semibold">Renewables</div>
+                          <div className="text-xs text-slate-600">8kW Solar + 5kW Wind + 30kWh Storage</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-900 font-semibold">Control</div>
+                          <div className="text-xs text-slate-600">Random Forest prescriptive decisions</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-900 font-semibold">Deployment</div>
+                          <div className="text-xs text-slate-600">14 rooms • heterogeneous sensing</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'overview',
+            render: () => (
+              <SlideShell accent="from-white via-brand-100/70 to-emerald-100/70">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Project Overview</h2>
+                    <p className="mt-2 text-sm text-slate-600">What we built, why it matters, and what makes it different.</p>
+                  </div>
+                  <IconBadge>📋</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-2">
+                  <Card title="Objective" icon="🎯">
+                    Develop a sustainable smart home IoT system with renewable energy integration.
+                  </Card>
+                  <Card title="Approach" icon="🏗️">
+                    Multi-tier architecture: edge preprocessing, gateway intelligence, cloud analytics.
+                  </Card>
+                  <Card title="Innovation" icon="🤖">
+                    ML-driven prescriptive control using Random Forest classifiers.
+                  </Card>
+                  <Card title="Energy" icon="⚡">
+                    Hybrid system: 8kW solar + 5kW wind + 30kWh battery storage.
+                  </Card>
+                  <Card title="Security" icon="🔒">
+                    AES-256 encryption, device authentication, and HMAC message integrity.
+                  </Card>
+                  <Card title="Compliance" icon="✅">
+                    100% implementation of IEEE paper requirements.
+                  </Card>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'sensing',
+            render: () => (
+              <SlideShell accent="from-white via-violet-100/70 to-brand-100/70">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Multi-Tier Sensing Layer</h2>
+                    <p className="mt-2 text-sm text-slate-600">50+ heterogeneous sensors across the home environment.</p>
+                  </div>
+                  <IconBadge>📡</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-3">
+                  <Card title="Environmental" icon="🌡️">
+                    <ul className="space-y-2">
+                      <li>Temperature, humidity</li>
+                      <li>Light intensity (lux)</li>
+                      <li>CO₂ (ppm), air pressure</li>
+                      <li>Air quality sensing</li>
+                    </ul>
+                  </Card>
+                  <Card title="Vision & Motion" icon="👁️">
+                    <ul className="space-y-2">
+                      <li>Camera sensors</li>
+                      <li>Object detection</li>
+                      <li>PIR motion detectors</li>
+                      <li>Vibration & distance</li>
+                    </ul>
+                  </Card>
+                  <Card title="Agricultural" icon="🌱">
+                    <ul className="space-y-2">
+                      <li>Soil moisture</li>
+                      <li>Irrigation feedback</li>
+                      <li>Weather correlation</li>
+                      <li>Smart watering control</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 text-center">
+                  <div className="text-sm text-slate-600">Deployment</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-900">50+ sensors deployed across 14 rooms</div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'renewables',
+            render: () => (
+              <SlideShell accent="from-white via-amber-100/70 to-brand-100/70">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Renewable Energy System</h2>
+                    <p className="mt-2 text-sm text-slate-600">Hybrid generation + storage + grid integration • scenario: {scenario.people} people</p>
+                  </div>
+                  <IconBadge>⚡</IconBadge>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-5">
+                  <div className="md:col-span-3">
+                    <ScenarioComparisonTable
+                      title="Occupancy simulation (energy KPIs)"
+                      highlight={scenario.people}
+                      rows={{
+                        columns: ['Daily (kWh)', 'Self-suff. (%)', 'Solar (%)', 'Wind (%)'],
+                        data: [4, 5, 6, 7].map((o) => {
+                          const s = scenarioByOcc[o];
+                          return {
+                            occ: o,
+                            values: [`${s.dailyKwh}`, `${s.selfSufficiencyPct}`, `${s.solarShare}`, `${s.windShare}`],
+                          };
+                        }),
+                      }}
+                    />
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-3">
+                    <Metric value={`${scenario.dailyKwh} kWh`} label="Daily Energy (highlighted)" />
+                    <Metric value={`${scenario.avgLoadKw} kW`} label="Avg Load (highlighted)" />
+                    <Metric value={`${scenario.solarShare}%`} label="Solar Share (highlighted)" />
+                    <Metric value={`${scenario.windShare}%`} label="Wind Share (highlighted)" />
+                  </div>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-2">
+                  <Card title="Solar Array" icon="☀️">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Metric value="8 kW" label="Capacity" />
+                      <Metric value={`${scenario.solarShare}%`} label="Annual Contribution" />
+                    </div>
+                    <ul className="mt-4 space-y-2">
+                      <li>Ramallah-specific irradiance model</li>
+                      <li>Seasonal variation 3.5–7.5 kWh/m²/day</li>
+                      <li>20% panel efficiency</li>
+                    </ul>
+                  </Card>
+                  <Card title="Wind Turbine" icon="💨">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Metric value="5 kW" label="Capacity" />
+                      <Metric value={`${scenario.windShare}%`} label="Annual Contribution" />
+                    </div>
+                    <ul className="mt-4 space-y-2">
+                      <li>Variable wind (3.8–5.2 m/s avg)</li>
+                      <li>Cubic power curve modeling</li>
+                      <li>Cut-in 3 m/s • rated 12 m/s</li>
+                    </ul>
+                  </Card>
+                  <Card title="Battery Storage" icon="🔋">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Metric value="30 kWh" label="LiFePO₄" />
+                      <Metric value="95%" label="Efficiency" />
+                    </div>
+                    <ul className="mt-4 space-y-2">
+                      <li>Smart charge/discharge cycles</li>
+                      <li>Health monitoring & SOC tracking</li>
+                      <li>Low-power mode activation</li>
+                    </ul>
+                  </Card>
+                  <Card title="Grid Integration" icon="🔌">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Metric value="99.1%" label="Annual Uptime" />
+                      <Metric value="Hybrid" label="Import/Export" />
+                    </div>
+                    <ul className="mt-4 space-y-2">
+                      <li>Bi-directional capability</li>
+                      <li>Automatic switching & cost optimization</li>
+                      <li>Emergency backup power</li>
+                    </ul>
+                  </Card>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'energyChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-brand-100/70 to-amber-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Annual Energy Generation</h2>
+                    <p className="mt-2 text-sm text-slate-600">Comparative occupancy simulation (4/5/6/7 people). Highlighted: {scenario.people}.</p>
+                  </div>
+                  <IconBadge>📊</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="energyGenerationChart" config={energyGenerationConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value="47,450" label="kWh Solar / Year (base)" />
+                  <Metric value="17,520" label="kWh Wind / Year (base)" />
+                  <Metric value={`${(scenario.dailyKwh * 365).toLocaleString()}`} label="kWh Consumption / Year (highlighted)" />
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
+                  <span className="font-semibold text-slate-900">Assumptions:</span>
+                  {' '}
+                  consumption scales with occupancy (plug loads + hot water + HVAC factor); generation is fixed (same solar/wind resource). Curves are normalized to annual energy totals.
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'architecture',
+            render: () => (
+              <SlideShell accent="from-white via-emerald-100/60 to-brand-100/70">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Five-Tier System Architecture</h2>
+                    <p className="mt-2 text-sm text-slate-600">From sensors to control — optimized for reliability and efficiency.</p>
+                  </div>
+                  <IconBadge>🏗️</IconBadge>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-5">
+                  <div className="md:col-span-3">
+                    <ScenarioComparisonTable
+                      title="Occupancy simulation (systems KPIs)"
+                      highlight={scenario.people}
+                      rows={{
+                        columns: ['Events/min', 'Edge BW red. (%)', 'Avg Load (kW)'],
+                        data: [4, 5, 6, 7].map((o) => {
+                          const s = scenarioByOcc[o];
+                          return {
+                            occ: o,
+                            values: [`${s.messagesPerMin}`, `${s.bandwidthReductionPct}`, `${s.avgLoadKw}`],
+                          };
+                        }),
+                      }}
+                    />
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-3">
+                    <Metric value={`${scenario.messagesPerMin}/min`} label="Events/min (highlighted)" />
+                    <Metric value={`${scenario.bandwidthReductionPct}%`} label="Edge BW Red. (highlighted)" />
+                    <Metric value={`${scenario.avgLoadKw} kW`} label="Avg Load (highlighted)" />
+                    <Metric value={`${scenario.peakLoadKw} kW`} label="Peak Load (highlighted)" />
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <Card title="1) Sensor Layer (Physical)" icon="1️⃣">
+                      50+ sensors: temperature, humidity, light, motion, CO₂, cameras, soil moisture across 14 rooms.
+                    </Card>
+                    <Card title="2) Edge Preprocessing" icon="2️⃣">
+                      Filtering, outlier detection (z-score ≥ 3.0), EMA smoothing, quality checks — reduces bandwidth by ~{scenario.bandwidthReductionPct}%.
+                    </Card>
+                    <Card title="3) Gateway Intelligence" icon="3️⃣">
+                      Protocol translation, energy-aware scheduling, priority queues, buffering (~1000 messages).
+                    </Card>
+                    <Card title="4) Cloud Analytics" icon="4️⃣">
+                      MongoDB warehousing, AI predictions, anomaly detection, model training, visualization.
+                    </Card>
+                    <Card title="5) Actuator Control" icon="5️⃣">
+                      Random Forest prescriptive control with safety validation for HVAC, lighting, irrigation.
+                    </Card>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                    <div className="text-sm font-semibold text-slate-900">System Diagram</div>
+                    <div className="mt-3 text-xs text-slate-600">Data flow: sensors → edge → gateway → cloud → actuators</div>
+                    <svg viewBox="0 0 900 520" className="mt-4 h-[300px] w-full">
+                      <defs>
+                        <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
+                          <stop offset="0" stop-color="#2563eb" stop-opacity="0.15" />
+                          <stop offset="1" stop-color="#10b981" stop-opacity="0.18" />
+                        </linearGradient>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+                          <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                        </marker>
+                      </defs>
+
+                      <rect x="10" y="10" width="880" height="500" rx="24" fill="url(#grad)" stroke="#e2e8f0" />
+
+                      <g font-family="ui-sans-serif, system-ui" fill="#0f172a" stroke="#cbd5e1">
+                        <rect x="60" y="80" width="160" height="90" rx="18" fill="#ffffff" />
+                        <text x="140" y="125" text-anchor="middle" font-size="16" font-weight="700">Sensors</text>
+                        <text x="140" y="150" text-anchor="middle" font-size="12" fill="#475569">Temp • CO₂ • Motion</text>
+
+                        <rect x="280" y="80" width="160" height="90" rx="18" fill="#ffffff" />
+                        <text x="360" y="125" text-anchor="middle" font-size="16" font-weight="700">Edge</text>
+                        <text x="360" y="150" text-anchor="middle" font-size="12" fill="#475569">Filter • Smooth • QA</text>
+
+                        <rect x="500" y="80" width="160" height="90" rx="18" fill="#ffffff" />
+                        <text x="580" y="125" text-anchor="middle" font-size="16" font-weight="700">Gateway</text>
+                        <text x="580" y="150" text-anchor="middle" font-size="12" fill="#475569">Translate • Queue</text>
+
+                        <rect x="720" y="80" width="160" height="90" rx="18" fill="#ffffff" />
+                        <text x="800" y="125" text-anchor="middle" font-size="16" font-weight="700">Cloud</text>
+                        <text x="800" y="150" text-anchor="middle" font-size="12" fill="#475569">ML • Analytics</text>
+
+                        <rect x="330" y="300" width="240" height="110" rx="22" fill="#ffffff" />
+                        <text x="450" y="340" text-anchor="middle" font-size="16" font-weight="700">Actuators</text>
+                        <text x="450" y="365" text-anchor="middle" font-size="12" fill="#475569">HVAC • Lighting • Irrigation</text>
+                        <text x="450" y="390" text-anchor="middle" font-size="12" fill="#475569">Safety validation</text>
+                      </g>
+
+                      <g stroke="#64748b" stroke-width="3" fill="none" marker-end="url(#arrow)">
+                        <path d="M 220 125 L 280 125" />
+                        <path d="M 440 125 L 500 125" />
+                        <path d="M 660 125 L 720 125" />
+                        <path d="M 800 170 C 800 240 560 240 450 300" />
+                        <path d="M 450 410 C 450 470 200 470 140 170" />
+                      </g>
+
+                      <g font-family="ui-sans-serif, system-ui" font-size="12" fill="#475569">
+                        <text x="250" y="110" text-anchor="middle">MQTT/HTTP</text>
+                        <text x="470" y="110" text-anchor="middle">JSON/XML/SOAP</text>
+                        <text x="690" y="110" text-anchor="middle">TLS + HMAC</text>
+                        <text x="650" y="260" text-anchor="middle">Model inference</text>
+                        <text x="260" y="455" text-anchor="middle">Feedback loop</text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'edgeGateway',
+            render: () => (
+              <SlideShell accent="from-white via-violet-100/60 to-emerald-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Edge & Gateway Intelligence</h2>
+                    <p className="mt-2 text-sm text-slate-600">Noise reduction at the edge, smart scheduling at the gateway • {scenario.people} people scenario</p>
+                  </div>
+                  <IconBadge>🔄</IconBadge>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-5">
+                  <div className="md:col-span-3">
+                    <ScenarioComparisonTable
+                      title="Occupancy simulation (edge/gateway load)"
+                      highlight={scenario.people}
+                      rows={{
+                        columns: ['Events/min', 'BW red. (%)', 'Daily (kWh)'],
+                        data: [4, 5, 6, 7].map((o) => {
+                          const s = scenarioByOcc[o];
+                          return {
+                            occ: o,
+                            values: [`${s.messagesPerMin}`, `${s.bandwidthReductionPct}`, `${s.dailyKwh}`],
+                          };
+                        }),
+                      }}
+                    />
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-2 gap-3">
+                    <Metric value={`${scenario.messagesPerMin}/min`} label="Events/min (highlighted)" />
+                    <Metric value={`${scenario.bandwidthReductionPct}%`} label="BW Red. (highlighted)" />
+                    <Metric value="1000" label="Gateway Buffer (msgs)" />
+                    <Metric value="<100 ms" label="Control Latency Target" />
+                  </div>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-2">
+                  <Card title="Edge Preprocessing" icon="⚙️">
+                    <ul className="space-y-2">
+                      <li>Outlier detection (z-score ≥ 3.0)</li>
+                      <li>EMA smoothing (α = 0.3)</li>
+                      <li>Stats (μ, σ, min, max)</li>
+                      <li>Quality scoring (high/medium/low)</li>
+                      <li>Bandwidth reduction: {scenario.bandwidthReductionPct}%</li>
+                    </ul>
+                  </Card>
+                  <Card title="Gateway Intelligence" icon="🌐">
+                    <ul className="space-y-2">
+                      <li>JSON ↔ XML ↔ SOAP translation</li>
+                      <li>Energy-aware scheduling</li>
+                      <li>3-level priority queuing</li>
+                      <li>Buffering (~1000 msg)</li>
+                      <li>AES-256 + HMAC enforcement</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 text-center">
+                  <div className="text-slate-900 font-semibold">Intelligent Data Flow Optimization</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Edge filters noise → Gateway optimizes transmission → Cloud learns and predicts.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'consumptionChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-rose-100/60 to-brand-100/70">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Daily Power Consumption</h2>
+                    <p className="mt-2 text-sm text-slate-600">Daily load profiles for 4/5/6/7 people (highlighted: {scenario.people}).</p>
+                  </div>
+                  <IconBadge>⚡</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="consumptionPatternChart" config={consumptionPatternConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value={`${scenario.avgLoadKw} kW`} label="Average Load (highlighted)" />
+                  <Metric value={`${scenario.peakLoadKw} kW`} label="Peak Load (highlighted)" />
+                  <Metric value={`${scenario.baseLoadKw} kW`} label="Base Load (Night)" />
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
+                  <span className="font-semibold text-slate-900">Model:</span>
+                  {' '}
+                  base load + per-person incremental load + HVAC multiplier. Peak window around 21:00; values shown in kW.
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'ml',
+            render: () => (
+              <SlideShell accent="from-white via-emerald-100/60 to-violet-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Machine Learning & AI</h2>
+                    <p className="mt-2 text-sm text-slate-600">Prescriptive control based on sensor fusion + energy context.</p>
+                  </div>
+                  <IconBadge>🤖</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-3">
+                  <Card title="Random Forest Classifier" icon="🌲">
+                    <div className="text-sm text-slate-300">5 specialized models</div>
+                    <ul className="mt-3 space-y-2">
+                      <li>HVAC (n=100 trees)</li>
+                      <li>Lighting automation</li>
+                      <li>Irrigation management</li>
+                      <li>Ventilation control</li>
+                      <li>Alarm systems</li>
+                    </ul>
+                  </Card>
+                  <Card title="Feature Extraction" icon="📊">
+                    <div className="text-sm text-slate-300">14 features</div>
+                    <ul className="mt-3 space-y-2">
+                      <li>Temp, humidity, light</li>
+                      <li>Motion, CO₂, gas levels</li>
+                      <li>Soil moisture, vibration</li>
+                      <li>Solar/wind availability</li>
+                      <li>Battery, time, occupancy</li>
+                    </ul>
+                  </Card>
+                  <Card title="Performance" icon="🎯">
+                    <div className="text-sm text-slate-300">92%+ accuracy target</div>
+                    <ul className="mt-3 space-y-2">
+                      <li>1000+ training samples</li>
+                      <li>Latency &lt; 100ms</li>
+                      <li>Confidence threshold 70%</li>
+                      <li>Online learning</li>
+                      <li>Safety constraints</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 text-center">
+                  <div className="text-slate-900 font-semibold">Prescriptive Control Innovation</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Models predict optimal actuator states based on sensor fusion, energy availability, and learned behavior.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'mlChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-emerald-100/50 to-violet-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">ML Model Performance</h2>
+                    <p className="mt-2 text-sm text-slate-600">Accuracy & precision across actuator categories.</p>
+                  </div>
+                  <IconBadge>🎯</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="mlPerformanceChart" config={mlPerformanceConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value="94.2%" label="HVAC Accuracy" />
+                  <Metric value="96.8%" label="Lighting Accuracy" />
+                  <Metric value="92.5%" label="Overall Accuracy" />
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'security',
+            render: () => (
+              <SlideShell accent="from-white via-brand-100/60 to-violet-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Security Architecture</h2>
+                    <p className="mt-2 text-sm text-slate-600">Encryption, authentication, and integrity end-to-end.</p>
+                  </div>
+                  <IconBadge>🔒</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-2">
+                  <Card title="AES-256 Encryption" icon="🔐">
+                    <ul className="space-y-2">
+                      <li>Fernet symmetric encryption</li>
+                      <li>PBKDF2 (100K iterations)</li>
+                      <li>Selective encryption by sensitivity</li>
+                      <li>Secure transmission & storage</li>
+                    </ul>
+                  </Card>
+                  <Card title="Device Authentication" icon="🎫">
+                    <ul className="space-y-2">
+                      <li>Unique device tokens (UUID)</li>
+                      <li>Token-based authentication</li>
+                      <li>Registration & provisioning</li>
+                      <li>RBAC + session management</li>
+                    </ul>
+                  </Card>
+                  <Card title="Message Integrity" icon="✅">
+                    <ul className="space-y-2">
+                      <li>HMAC-SHA256 signatures</li>
+                      <li>Tamper detection</li>
+                      <li>Replay prevention (nonce)</li>
+                      <li>Data validation & sanitization</li>
+                    </ul>
+                  </Card>
+                  <Card title="Security Monitoring" icon="📊">
+                    <ul className="space-y-2">
+                      <li>Real-time threat detection</li>
+                      <li>Security level tracking</li>
+                      <li>Anomaly alerts & notifications</li>
+                      <li>Audit logging + reporting</li>
+                    </ul>
+                  </Card>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'batteryChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-emerald-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Battery Performance</h2>
+                    <p className="mt-2 text-sm text-slate-600">Health + state of charge behavior across the year.</p>
+                  </div>
+                  <IconBadge>🔋</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="batteryPerformanceChart" config={batteryPerformanceConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value="95%" label="Round-trip Efficiency" />
+                  <Metric value="365" label="Charge Cycles / Year" />
+                  <Metric value="98.2%" label="Battery Health" />
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'stack',
+            render: () => (
+              <SlideShell accent="from-white via-violet-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Technology Stack</h2>
+                    <p className="mt-2 text-sm text-slate-600">Tools used for implementation, analytics, and security.</p>
+                  </div>
+                  <IconBadge>💻</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-4">
+                  {[
+                    ['🐍', 'Python 3.9+', 'Core implementation language'],
+                    ['🧠', 'scikit-learn', 'Random Forest models & preprocessing'],
+                    ['🍃', 'MongoDB', 'NoSQL warehousing & analytics'],
+                    ['🖥️', 'CustomTkinter', 'Real-time dashboard UI'],
+                    ['📊', 'NumPy', 'Numerical computing & statistics'],
+                    ['📈', 'Matplotlib', 'Visualization & plotting'],
+                    ['🔐', 'Cryptography', 'AES-256, HMAC, Fernet'],
+                    ['🐳', 'Docker', 'Deployment & service orchestration'],
+                  ].map(([ic, title, desc]) => (
+                    <Card key={title} title={title} icon={ic} className="md:col-span-2">
+                      {desc}
+                    </Card>
+                  ))}
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'seasonalChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-amber-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Seasonal Performance</h2>
+                    <p className="mt-2 text-sm text-slate-600">Renewable generation distribution across seasons.</p>
+                  </div>
+                  <IconBadge>🌍</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="seasonalPerformanceChart" config={seasonalPerformanceConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value="Summer" label="Best Solar" />
+                  <Metric value="Spring" label="Best Wind" />
+                  <Metric value="89%" label="Avg Self-Sufficiency" />
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'actuators',
+            render: () => (
+              <SlideShell accent="from-white via-brand-100/60 to-emerald-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Smart Actuator Control</h2>
+                    <p className="mt-2 text-sm text-slate-600">Energy-aware automation across HVAC, lighting, irrigation.</p>
+                  </div>
+                  <IconBadge>🎛️</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-3">
+                  <Card title="HVAC" icon="❄️">
+                    <ul className="space-y-2">
+                      <li>3× AC (2000W each)</li>
+                      <li>4× Heaters (1500W each)</li>
+                      <li>Variable load 60–100%</li>
+                      <li>Setpoint 20–26°C</li>
+                      <li>ML-driven optimization</li>
+                    </ul>
+                  </Card>
+                  <Card title="Lighting" icon="💡">
+                    <ul className="space-y-2">
+                      <li>25× LED (12W each)</li>
+                      <li>5× CFL (60W each)</li>
+                      <li>Brightness 0–100%</li>
+                      <li>Occupancy automation</li>
+                      <li>Daylight harvesting</li>
+                    </ul>
+                  </Card>
+                  <Card title="Irrigation" icon="💧">
+                    <ul className="space-y-2">
+                      <li>Smart pumps (750W)</li>
+                      <li>Soil moisture feedback</li>
+                      <li>Weather-aware scheduling</li>
+                      <li>Evaporation modeling</li>
+                      <li>Optimal moisture 40–60%</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 text-center">
+                  <div className="text-slate-900 font-semibold">Energy-Aware Control</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    30+ actuators controlled by ML considering sensors, occupancy, time, and renewable availability.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'roiChart',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-emerald-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Cost Savings & ROI</h2>
+                    <p className="mt-2 text-sm text-slate-600">Long-term savings compared to initial investment.</p>
+                  </div>
+                  <IconBadge>💰</IconBadge>
+                </div>
+
+                <div className="mt-8">
+                  <ChartCanvas id="costSavingsChart" config={costSavingsConfig} active={active} />
+                </div>
+
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  <Metric value="$8,746" label="Annual Savings" />
+                  <Metric value="5.2 yrs" label="Payback Period" />
+                  <Metric value="$175K" label="20-Year Savings" />
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'environment',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-emerald-100/60 to-violet-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Environmental Impact</h2>
+                    <p className="mt-2 text-sm text-slate-600">Sustainability outcomes driven by renewables + optimization.</p>
+                  </div>
+                  <IconBadge>🌱</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-5">
+                  <div className="md:col-span-2 space-y-4">
+                    <Card title="Annual CO₂ Reduction" icon="🌍">
+                      <div className="mt-2 text-3xl font-semibold text-slate-900">32.5 tons</div>
+                      <div className="mt-2 text-sm text-slate-600">≈ 1,500 trees or 7 cars removed for a year</div>
+                    </Card>
+                    <Card title="Sustainability" icon="♻️">
+                      <ul className="space-y-2">
+                        <li>89% renewable energy usage</li>
+                        <li>Zero fossil fuel consumption</li>
+                        <li>Water conservation: 30% reduction</li>
+                        <li>Smart irrigation optimization</li>
+                      </ul>
+                    </Card>
+                  </div>
+                  <div className="md:col-span-3">
+                    <ChartCanvas id="environmentalChart" config={environmentalConfig} active={active} />
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'results',
+            render: ({ active }) => (
+              <SlideShell accent="from-white via-brand-100/60 to-emerald-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">One-Year Results</h2>
+                    <p className="mt-2 text-sm text-slate-600">Comparative simulation summary (4/5/6/7 occupants) + implementation KPIs.</p>
+                  </div>
+                  <IconBadge>📈</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-5">
+                  <div className="md:col-span-3 rounded-3xl border border-slate-200 bg-white p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-slate-900">Occupancy Simulation (Annualized)</div>
+                      <div className="text-xs text-slate-500">Highlighted: {scenario.people} people</div>
+                    </div>
+
+                    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-700">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">Occupancy</th>
+                            <th className="px-3 py-2 font-semibold">Avg Load (kW)</th>
+                            <th className="px-3 py-2 font-semibold">Peak (kW)</th>
+                            <th className="px-3 py-2 font-semibold">Daily (kWh)</th>
+                            <th className="px-3 py-2 font-semibold">Events/min</th>
+                            <th className="px-3 py-2 font-semibold">Self-suff. (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {[4, 5, 6, 7].map((o) => {
+                            const s = scenarioByOcc[o];
+                            const avgCI = (s.avgLoadKw * 0.05).toFixed(1);
+                            const peakCI = (s.peakLoadKw * 0.06).toFixed(1);
+                            const dailyCI = Math.round(s.dailyKwh * 0.06);
+                            const isHi = o === scenario.people;
+                            return (
+                              <tr key={o} className={isHi ? 'bg-brand-50/60' : 'bg-white'}>
+                                <td className="px-3 py-2 font-semibold text-slate-900">{o}</td>
+                                <td className="px-3 py-2 text-slate-700">{s.avgLoadKw} ± {avgCI}</td>
+                                <td className="px-3 py-2 text-slate-700">{s.peakLoadKw} ± {peakCI}</td>
+                                <td className="px-3 py-2 text-slate-700">{s.dailyKwh} ± {dailyCI}</td>
+                                <td className="px-3 py-2 text-slate-700">{s.messagesPerMin}</td>
+                                <td className="px-3 py-2 text-slate-700">{s.selfSufficiencyPct}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-3 text-[11px] text-slate-500">
+                      Uncertainty bands are mocked (±5–6%) to represent measurement + model error; tune as needed for a real validation dataset.
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                      <div className="text-sm font-semibold text-slate-900">Implementation KPIs</div>
+                      <div className="mt-4 space-y-3">
+                        <ProgressRow active={active} label="IEEE Paper Compliance" value="100%" />
+                        <ProgressRow active={active} label="ML Accuracy (avg)" value="92.5%" />
+                        <ProgressRow active={active} label="System Uptime" value="99.1%" />
+                        <ProgressRow active={active} label="Battery Round-trip Eff." value="95%" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                      <div className="text-sm font-semibold text-slate-900">Energy KPIs (Highlighted)</div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <Metric value={`${scenario.solarShare}%`} label="Solar Share" />
+                        <Metric value={`${scenario.windShare}%`} label="Wind Share" />
+                        <Metric value={`${scenario.bandwidthReductionPct}%`} label="Edge BW Reduction" />
+                        <Metric value={`${scenario.dailyKwh} kWh`} label="Daily Energy" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'future',
+            render: () => (
+              <SlideShell accent="from-white via-violet-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Future Enhancements</h2>
+                    <p className="mt-2 text-sm text-slate-600">Next research directions and product-level upgrades.</p>
+                  </div>
+                  <IconBadge>🚀</IconBadge>
+                </div>
+
+                <div className="mt-10 grid gap-4 md:grid-cols-2">
+                  <Card title="Advanced AI" icon="🤖">
+                    <ul className="space-y-2">
+                      <li>Deep learning (LSTM/GRU)</li>
+                      <li>Vision-based occupancy</li>
+                      <li>Natural language interface</li>
+                      <li>Predictive maintenance</li>
+                      <li>Transfer learning</li>
+                    </ul>
+                  </Card>
+                  <Card title="Energy Optimization" icon="⚡">
+                    <ul className="space-y-2">
+                      <li>V2H integration</li>
+                      <li>Hydrogen fuel cell backup</li>
+                      <li>Dynamic grid pricing</li>
+                      <li>P2P energy trading</li>
+                      <li>Advanced MPPT</li>
+                    </ul>
+                  </Card>
+                  <Card title="IoT Expansion" icon="🌐">
+                    <ul className="space-y-2">
+                      <li>5G/LoRaWAN</li>
+                      <li>Edge AI accelerators</li>
+                      <li>Blockchain integrity</li>
+                      <li>Digital twin simulation</li>
+                      <li>Mesh networks</li>
+                    </ul>
+                  </Card>
+                  <Card title="Security" icon="🔐">
+                    <ul className="space-y-2">
+                      <li>Quantum-resistant crypto</li>
+                      <li>Zero-trust architecture</li>
+                      <li>Intrusion detection</li>
+                      <li>Behavioral analytics</li>
+                      <li>Hardware security modules</li>
+                    </ul>
+                  </Card>
+                </div>
+              </SlideShell>
+            )
+          },
+        ];
+      }, [scenario]);
+
+      const total = slides.length;
+      const [index, setIndex] = useState(0);
+      const activeSlide = slides[index];
+
+      const goPrev = () => setIndex((i) => Math.max(0, i - 1));
+      const goNext = () => setIndex((i) => Math.min(total - 1, i + 1));
+
+      useEffect(() => {
+        const onKeyDown = (e) => {
+          if (e.key === 'ArrowRight' || e.key === ' ') {
+            e.preventDefault();
+            goNext();
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            goPrev();
+          }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+      }, [total]);
+
+      const progress = ((index + 1) / total) * 100;
+
+      return (
+        <div className="h-full bg-slate-100">
+          <div className="fixed left-0 right-0 top-0 z-50">
+            <div className="h-1 bg-slate-200">
+              <div className="h-full bg-gradient-to-r from-emerald-500 to-brand-600" style={{ width: progress + '%' }} />
+            </div>
+          </div>
+
+          <div className="fixed right-6 top-4 z-50">
+            <OccupancySelector value={occupancy} onChange={setOccupancy} />
+          </div>
+
+          <div className="flex h-full items-center justify-center p-4 md:p-10">
+            <div className="w-full max-w-6xl aspect-[16/9] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_90px_rgba(2,6,23,.15)]">
+              {activeSlide.render({ active: true })}
+            </div>
+          </div>
+
+          <div className="fixed bottom-6 left-6 z-50 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs text-slate-700 backdrop-blur">
+            <span className="font-semibold text-slate-900">{index + 1}</span> / {total}
+          </div>
+
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
+            <button
+              className="rounded-full border border-slate-200 bg-white/90 px-5 py-2 text-sm text-slate-900 backdrop-blur transition hover:bg-white disabled:opacity-40"
+              onClick={goPrev}
+              disabled={index === 0}
+            >
+              ← Prev
+            </button>
+            <button
+              className="rounded-full border border-slate-200 bg-white/90 px-5 py-2 text-sm text-slate-900 backdrop-blur transition hover:bg-white disabled:opacity-40"
+              onClick={goNext}
+              disabled={index === total - 1}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<SlidesApp />);
+  </script>
+</body>
+</html>
