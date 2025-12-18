@@ -112,7 +112,8 @@ class DatabaseManager:
     
     def store_sensor_reading(self, sensor_id: str, sensor_type: str, room: str,
                            value: float, unit: str, simulation_time: datetime,
-                           transmission_format: str = None, serialized_data: str = None):
+                           transmission_format: str = None, serialized_data: str = None,
+                           encrypted: bool = False, security_level: str = 'low'):
         """
         Store a sensor reading
         
@@ -125,6 +126,8 @@ class DatabaseManager:
             simulation_time: Simulated time in application
             transmission_format: Format used for transmission (json, xml, mixed)
             serialized_data: Serialized data string (optional, for debugging)
+            encrypted: Whether data is encrypted
+            security_level: Security level (low, medium, high)
         """
         if not self.connected:
             return
@@ -136,7 +139,9 @@ class DatabaseManager:
             'value': value,
             'unit': unit,
             'timestamp': datetime.now(),
-            'simulation_time': simulation_time
+            'simulation_time': simulation_time,
+            'encrypted': encrypted,
+            'security_level': security_level
         }
         
         # Add transmission format metadata if provided

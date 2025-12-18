@@ -331,3 +331,175 @@ class CO2Sensor(Sensor):
     
     def get_unit(self) -> str:
         return "ppm"
+
+# ============================================================================
+# VIBRATION SENSOR
+# ============================================================================
+
+class VibrationSensor(Sensor):
+    """Detects vibrations and mechanical disturbances"""
+    
+    def __init__(self, sensor_id: str, room: Room):
+        super().__init__(sensor_id, room, "Vibration")
+        self.value = 0.0  # Vibration intensity (0-100)
+        self.threshold = 30.0  # Alert threshold
+        self.baseline = 5.0  # Normal background vibration
+        
+    def read(self, time_hour: int, season: Season, num_people: int) -> float:
+        """Measure vibration levels"""
+        # Base vibration from HVAC, appliances
+        base_vibration = self.baseline
+        
+        # Occupancy increases vibration (movement, doors, etc.)
+        if self.room.occupancy > 0:
+            occupancy_vibration = self.room.occupancy * random.uniform(5, 15)
+        else:
+            occupancy_vibration = 0
+        
+        # Random events (door slams, appliances)
+        if random.random() < 0.1:  # 10% chance of event
+            event_vibration = random.uniform(20, 50)
+        else:
+            event_vibration = 0
+        
+        # Weather effects (wind on windows)
+        if season == Season.WINTER:
+            weather_vibration = random.uniform(0, 10)
+        else:
+            weather_vibration = random.uniform(0, 5)
+        
+        self.value = base_vibration + occupancy_vibration + event_vibration + weather_vibration
+        self.value = max(0, min(100, self.add_noise(self.value, 3)))
+        self.last_update = datetime.now()
+        
+        return self.value
+    
+    def get_unit(self) -> str:
+        return "intensity"
+    
+    def is_abnormal(self) -> bool:
+        """Check if vibration exceeds threshold"""
+        return self.value > self.threshold
+
+# ============================================================================
+# CAMERA / OBJECT DETECTION SENSOR
+# ============================================================================
+
+class CameraSensor(Sensor):
+    """Vision-based sensor with object detection capabilities"""
+    
+    def __init__(self, sensor_id: str, room: Room):
+        super().__init__(sensor_id, room, "Camera")
+        self.detected_objects = []
+        self.detection_confidence = 0.0
+        self.distance_to_object = 0.0
+        self.power_consumption = 3.0  # Cameras use more power
+        
+        # Common household objects
+        self.object_library = [
+            "person", "chair", "table", "sofa", "bed", "door", "window",
+            "plant", "lamp", "tv", "computer", "phone", "book", "cup",
+            "bottle", "clock", "picture", "curtain", "rug", "cabinet"
+        ]
+        
+    def read(self, time_hour: int, season: Season, num_people: int) -> float:
+        """Perform object detection and distance measurement"""
+        self.detected_objects = []
+        
+        # Detect people based on occupancy
+        if self.room.occupancy > 0:
+            for i in range(self.room.occupancy):
+                distance = random.uniform(1.0, 5.0)  # meters
+                confidence = random.uniform(0.85, 0.99)
+                self.detected_objects.append({
+                    'object': 'person',
+                    'distance': round(distance, 2),
+                    'confidence': round(confidence, 2)
+                })
+        
+        # Detect static objects in room
+        num_static_objects = random.randint(2, 5)
+        for _ in range(num_static_objects):
+            obj = random.choice(self.object_library)
+            distance = random.uniform(0.5, 8.0)
+            confidence = random.uniform(0.70, 0.95)
+            self.detected_objects.append({
+                'object': obj,
+                'distance': round(distance, 2),
+                'confidence': round(confidence, 2)
+            })
+        
+        # Set primary detection (closest object)
+        if self.detected_objects:
+            closest = min(self.detected_objects, key=lambda x: x['distance'])
+            self.distance_to_object = closest['distance']
+            self.detection_confidence = closest['confidence']
+            self.value = len(self.detected_objects)  # Number of detected objects
+        else:
+            self.distance_to_object = 0.0
+            self.detection_confidence = 0.0
+            self.value = 0
+        
+        self.last_update = datetime.now()
+        return self.value
+    
+    def get_unit(self) -> str:
+        return "objects"
+    
+    def get_detection_data(self) -> dict:
+        """Get detailed detection information for SOAP/XML transmission"""
+        return {
+            'total_objects': int(self.value),
+            'objects': self.detected_objects,
+            'primary_distance': self.distance_to_object,
+            'primary_confidence': self.detection_confidence,
+            'timestamp': self.last_update.isoformat() if self.last_update else None
+        }
+
+# ============================================================================
+# SOIL MOISTURE SENSOR
+# ============================================================================
+
+class SoilMoistureSensor(Sensor):
+    """Measures soil moisture for irrigation control"""
+    
+    def __init__(self, sensor_id: str, room: Room):
+        super().__init__(sensor_id, room, "SoilMoisture")
+        self.value = 50.0  # Percentage (0-100%)
+        self.optimal_range = (40, 60)  # Optimal moisture range
+        self.evaporation_rate = 0.5  # % per hour
+        
+    def read(self, time_hour: int, season: Season, num_people: int) -> float:
+        """Calculate soil moisture level"""
+        # Natural evaporation
+        evaporation = self.evaporation_rate
+        
+        # Temperature affects evaporation
+        if season == Season.SUMMER:
+            evaporation *= 1.5
+        elif season == Season.WINTER:
+            evaporation *= 0.5
+        
+        # Time of day affects evaporation (higher during day)
+        if 10 <= time_hour <= 16:
+            evaporation *= 1.3
+        
+        # Decrease moisture
+        self.value -= evaporation
+        
+        # Ensure bounds
+        self.value = max(0, min(100, self.add_noise(self.value, 2)))
+        self.last_update = datetime.now()
+        
+        return self.value
+    
+    def get_unit(self) -> str:
+        return "%"
+    
+    def needs_irrigation(self) -> bool:
+        """Check if irrigation is needed"""
+        return self.value < self.optimal_range[0]
+    
+    def add_water(self, amount: float):
+        """Simulate irrigation (called by irrigation actuator)"""
+        self.value = min(100, self.value + amount)

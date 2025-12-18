@@ -53,10 +53,12 @@ except ImportError:
 from config import *
 from models import Room, NetworkNode
 from sensors import (TemperatureSensor, LightSensor, MotionSensor, 
-                    HumiditySensor, PowerMeterSensor, CO2Sensor)
+                    HumiditySensor, PowerMeterSensor, CO2Sensor,
+                    VibrationSensor, CameraSensor, SoilMoistureSensor)
 from actuators import (LightActuator, FanActuator, HeaterActuator, 
                       ACActuator, SmartOutletActuator, RefrigeratorActuator,
-                      WashingMachineActuator, DryerActuator, DishwasherActuator)
+                      WashingMachineActuator, DryerActuator, DishwasherActuator,
+                      IrrigationActuator)
 from energy_system import EnergySystem
 from water_system import WaterSystem
 from network import IoTNetwork, PowerGrid, WaterNetwork
@@ -66,6 +68,11 @@ from realistic_behaviors import (OccupancyPattern, Weather, ApplianceScheduler,
                                 SecuritySystem, CostTracker, EmergencyManager)
 from database import DatabaseManager
 from data_formats import DataFormat, MixedFormatManager, JSONSerializer, XMLSerializer, format_to_string
+from security import SecurityManager, EncryptionManager
+from ai_models import AIManager
+from edge_processor import EdgePreprocessor, EdgeFilteringNode
+from gateway import GatewayIntelligence, ProtocolTranslator
+from ml_prescriptive import PrescriptiveMLController
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("dark")  # Modes: "System", "Dark", "Light"
@@ -146,8 +153,26 @@ class SmartHomeModernApp(ctk.CTk):
         self.weather = Weather()
         self.scheduler = ApplianceScheduler()
         self.security = SecuritySystem()
+        
+        # Security and encryption system
+        encryption_enabled = os.getenv('ENCRYPTION_ENABLED', 'true').lower() == 'true'
+        self.security_manager = SecurityManager(
+            enable_encryption=encryption_enabled,
+            enable_authentication=True
+        )
         self.cost_tracker = CostTracker()
         self.emergency_mgr = EmergencyManager()
+        
+        # AI system for predictions and anomaly detection
+        self.ai_manager = AIManager()
+        
+        # Edge preprocessing and gateway intelligence
+        self.edge_node = EdgeFilteringNode(node_id="edge_node_001")
+        self.gateway = GatewayIntelligence(gateway_id="gateway_001")
+        
+        # ML Prescriptive Controller (Random Forest)
+        self.ml_controller = PrescriptiveMLController()
+        self.ml_enabled = False  # Will be enabled after training
         
         # Initialize simulation components
         self.setup_simulation()
@@ -198,6 +223,21 @@ class SmartHomeModernApp(ctk.CTk):
             if room.name in ["Living Room", "Kitchen", "Master Bedroom"]:
                 self.sensors.append(CO2Sensor(f"CO2-{sensor_id:03d}", room))
                 sensor_id += 1
+            
+            # Add vibration sensors to key rooms
+            if room.name in ["Living Room", "Master Bedroom", "Kitchen"]:
+                self.sensors.append(VibrationSensor(f"VIB-{sensor_id:03d}", room))
+                sensor_id += 1
+            
+            # Add camera sensors for security
+            if room.name in ["Living Room", "Front Entrance", "Kitchen"]:
+                self.sensors.append(CameraSensor(f"CAM-{sensor_id:03d}", room))
+                sensor_id += 1
+        
+        # Add soil moisture sensors for garden/outdoor areas
+        garden_room = next((r for r in self.rooms if "Garden" in r.name or "Outdoor" in r.name), self.rooms[0])
+        self.sensors.append(SoilMoistureSensor(f"SOIL-{sensor_id:03d}", garden_room))
+        sensor_id += 1
         
         print(f"✓ Created {len(self.sensors)} sensors")
         
@@ -233,6 +273,11 @@ class SmartHomeModernApp(ctk.CTk):
             
             room.actuators = [a for a in self.actuators if a.room == room]
         
+        # Add irrigation actuator for garden
+        self.actuators.append(IrrigationActuator(f"IRRIGATION-{actuator_id:03d}", garden_room))
+        actuator_id += 1
+        garden_room.actuators.append(self.actuators[-1])
+        
         print(f"✓ Created {len(self.actuators)} actuators")
         
         # Create systems
@@ -249,6 +294,10 @@ class SmartHomeModernApp(ctk.CTk):
             self.rooms, self.sensors, self.actuators,
             self.energy_system, self.water_system, self.network
         )
+        
+        # Authenticate all devices in the security system
+        device_ids = [s.sensor_id for s in self.sensors] + [a.actuator_id for a in self.actuators]
+        self.security_manager.authenticate_all_devices(device_ids)
         
         print(f"✓ Simulation ready!\n")
     
@@ -408,9 +457,21 @@ class SmartHomeModernApp(ctk.CTk):
                                        command=self.change_data_format)
         format_menu.grid(row=13, column=0, padx=20, pady=5)
         
+        # Security Status
+        security_frame = ctk.CTkFrame(sidebar)
+        security_frame.grid(row=14, column=0, padx=20, pady=10, sticky="ew")
+        
+        ctk.CTkLabel(security_frame, text="🔐 Security", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+        
+        self.security_status_label = ctk.CTkLabel(security_frame, text="", 
+                                                  font=ctk.CTkFont(size=10),
+                                                  justify="left")
+        self.security_status_label.pack(pady=5, padx=10)
+        
         # Statistics Summary
         stats_frame = ctk.CTkFrame(sidebar)
-        stats_frame.grid(row=14, column=0, padx=20, pady=20, sticky="ew")
+        stats_frame.grid(row=15, column=0, padx=20, pady=20, sticky="ew")
         
         ctk.CTkLabel(stats_frame, text="Quick Stats", 
                     font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
@@ -436,6 +497,7 @@ class SmartHomeModernApp(ctk.CTk):
         self.tabview.add("📊 Dashboard")
         self.tabview.add("📈 Energy Analytics")
         self.tabview.add("📊 Data Size Analytics")
+        self.tabview.add("🤖 AI Intelligence")
         self.tabview.add("📝 Event Log")
         self.tabview.add("⚙️ Devices")
         
@@ -450,6 +512,9 @@ class SmartHomeModernApp(ctk.CTk):
         
         # Data Size Analytics Tab
         self.create_data_size_analytics_tab()
+        
+        # AI Intelligence Tab (with nested tabs)
+        self.create_ai_intelligence_tab()
         
         # Event Log Tab
         self.create_event_log_tab()
@@ -672,6 +737,214 @@ class SmartHomeModernApp(ctk.CTk):
         
         self.data_size_stats = ctk.CTkTextbox(stats_frame, height=100)
         self.data_size_stats.pack(fill="x", padx=10, pady=5)
+    
+    def create_ai_intelligence_tab(self):
+        """Create AI Intelligence tab with nested tabs for Predictions and Anomaly Detection"""
+        ai_tab = self.tabview.tab("🤖 AI Intelligence")
+        
+        # Create nested tabview for AI features
+        self.ai_tabview = ctk.CTkTabview(ai_tab)
+        self.ai_tabview.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Add nested tabs
+        self.ai_tabview.add("📈 Predictions")
+        self.ai_tabview.add("🔍 Anomaly Detection")
+        
+        # Create the content for each nested tab
+        self.create_ai_predictions_content()
+        self.create_ai_anomaly_content()
+    
+    def create_ai_predictions_content(self):
+        """Create AI predictions dashboard content"""
+        pred_tab = self.ai_tabview.tab("📈 Predictions")
+        
+        # Title
+        title_frame = ctk.CTkFrame(pred_tab)
+        title_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(title_frame, 
+                    text="🤖 AI Energy Predictions",
+                    font=ctk.CTkFont(size=18, weight="bold")).pack(pady=5)
+        
+        # Main content frame
+        content_frame = ctk.CTkFrame(pred_tab)
+        content_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Left side - Current predictions
+        left_frame = ctk.CTkFrame(content_frame)
+        left_frame.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+        
+        ctk.CTkLabel(left_frame, text="📊 Next Cycle Predictions", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=10)
+        
+        # Prediction cards
+        pred_cards_frame = ctk.CTkFrame(left_frame)
+        pred_cards_frame.pack(fill="x", padx=10, pady=5)
+        
+        # Solar prediction
+        solar_card = ctk.CTkFrame(pred_cards_frame)
+        solar_card.pack(fill="x", pady=5)
+        ctk.CTkLabel(solar_card, text="☀️ Solar Generation", 
+                    font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+        self.ai_solar_pred_label = ctk.CTkLabel(solar_card, text="-- W", 
+                                                font=ctk.CTkFont(size=16))
+        self.ai_solar_pred_label.pack(pady=2)
+        
+        # Wind prediction
+        wind_card = ctk.CTkFrame(pred_cards_frame)
+        wind_card.pack(fill="x", pady=5)
+        ctk.CTkLabel(wind_card, text="🌬️ Wind Generation", 
+                    font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+        self.ai_wind_pred_label = ctk.CTkLabel(wind_card, text="-- W", 
+                                              font=ctk.CTkFont(size=16))
+        self.ai_wind_pred_label.pack(pady=2)
+        
+        # Consumption prediction
+        consumption_card = ctk.CTkFrame(pred_cards_frame)
+        consumption_card.pack(fill="x", pady=5)
+        ctk.CTkLabel(consumption_card, text="⚡ Consumption", 
+                    font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+        self.ai_consumption_pred_label = ctk.CTkLabel(consumption_card, text="-- W", 
+                                                     font=ctk.CTkFont(size=16))
+        self.ai_consumption_pred_label.pack(pady=2)
+        
+        # Battery prediction
+        battery_card = ctk.CTkFrame(pred_cards_frame)
+        battery_card.pack(fill="x", pady=5)
+        ctk.CTkLabel(battery_card, text="🔋 Battery Level", 
+                    font=ctk.CTkFont(size=12, weight="bold")).pack(pady=2)
+        self.ai_battery_pred_label = ctk.CTkLabel(battery_card, text="-- %", 
+                                                  font=ctk.CTkFont(size=16))
+        self.ai_battery_pred_label.pack(pady=2)
+        
+        # Confidence indicator
+        confidence_frame = ctk.CTkFrame(left_frame)
+        confidence_frame.pack(fill="x", padx=10, pady=10)
+        ctk.CTkLabel(confidence_frame, text="Prediction Confidence:", 
+                    font=ctk.CTkFont(size=12)).pack(side="left", padx=5)
+        self.ai_confidence_label = ctk.CTkLabel(confidence_frame, text="0%", 
+                                               font=ctk.CTkFont(size=12, weight="bold"))
+        self.ai_confidence_label.pack(side="left", padx=5)
+        self.ai_confidence_bar = ctk.CTkProgressBar(confidence_frame, width=200)
+        self.ai_confidence_bar.pack(side="left", padx=10)
+        self.ai_confidence_bar.set(0)
+        
+        # Right side - Recommendations and accuracy
+        right_frame = ctk.CTkFrame(content_frame)
+        right_frame.pack(side="right", fill="both", expand=True, padx=5, pady=5)
+        
+        # Recommendations
+        ctk.CTkLabel(right_frame, text="💡 AI Recommendations", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=10)
+        
+        self.ai_recommendations_text = ctk.CTkTextbox(right_frame, height=200)
+        self.ai_recommendations_text.pack(fill="x", padx=10, pady=5)
+        
+        # Accuracy metrics
+        ctk.CTkLabel(right_frame, text="📈 Prediction Accuracy", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=10)
+        
+        self.ai_accuracy_text = ctk.CTkTextbox(right_frame, height=200)
+        self.ai_accuracy_text.pack(fill="x", padx=10, pady=5)
+        
+        # Status
+        status_frame = ctk.CTkFrame(pred_tab)
+        status_frame.pack(fill="x", padx=10, pady=5)
+        
+        self.ai_status_label = ctk.CTkLabel(status_frame, 
+                                           text="🤖 AI Status: Initializing...",
+                                           font=ctk.CTkFont(size=12))
+        self.ai_status_label.pack(pady=5)
+    
+    def create_ai_anomaly_content(self):
+        """Create anomaly detection dashboard content"""
+        anomaly_tab = self.ai_tabview.tab("🔍 Anomaly Detection")
+        
+        # Title
+        title_frame = ctk.CTkFrame(anomaly_tab)
+        title_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(title_frame, 
+                    text="🔍 Real-time Anomaly Detection",
+                    font=ctk.CTkFont(size=18, weight="bold")).pack(pady=5)
+        
+        # Statistics frame
+        stats_frame = ctk.CTkFrame(anomaly_tab)
+        stats_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Anomaly counters
+        counters_frame = ctk.CTkFrame(stats_frame)
+        counters_frame.pack(fill="x", padx=10, pady=10)
+        
+        # Total anomalies
+        total_frame = ctk.CTkFrame(counters_frame)
+        total_frame.pack(side="left", padx=10, pady=5)
+        ctk.CTkLabel(total_frame, text="Total Anomalies", 
+                    font=ctk.CTkFont(size=11)).pack()
+        self.anomaly_total_label = ctk.CTkLabel(total_frame, text="0", 
+                                               font=ctk.CTkFont(size=20, weight="bold"))
+        self.anomaly_total_label.pack()
+        
+        # Critical
+        critical_frame = ctk.CTkFrame(counters_frame)
+        critical_frame.pack(side="left", padx=10, pady=5)
+        ctk.CTkLabel(critical_frame, text="🔴 Critical", 
+                    font=ctk.CTkFont(size=11)).pack()
+        self.anomaly_critical_label = ctk.CTkLabel(critical_frame, text="0", 
+                                                   font=ctk.CTkFont(size=20, weight="bold"),
+                                                   text_color="red")
+        self.anomaly_critical_label.pack()
+        
+        # High
+        high_frame = ctk.CTkFrame(counters_frame)
+        high_frame.pack(side="left", padx=10, pady=5)
+        ctk.CTkLabel(high_frame, text="🟠 High", 
+                    font=ctk.CTkFont(size=11)).pack()
+        self.anomaly_high_label = ctk.CTkLabel(high_frame, text="0", 
+                                              font=ctk.CTkFont(size=20, weight="bold"),
+                                              text_color="orange")
+        self.anomaly_high_label.pack()
+        
+        # Medium
+        medium_frame = ctk.CTkFrame(counters_frame)
+        medium_frame.pack(side="left", padx=10, pady=5)
+        ctk.CTkLabel(medium_frame, text="🟡 Medium", 
+                    font=ctk.CTkFont(size=11)).pack()
+        self.anomaly_medium_label = ctk.CTkLabel(medium_frame, text="0", 
+                                                 font=ctk.CTkFont(size=20, weight="bold"),
+                                                 text_color="yellow")
+        self.anomaly_medium_label.pack()
+        
+        # Low
+        low_frame = ctk.CTkFrame(counters_frame)
+        low_frame.pack(side="left", padx=10, pady=5)
+        ctk.CTkLabel(low_frame, text="🟢 Low", 
+                    font=ctk.CTkFont(size=11)).pack()
+        self.anomaly_low_label = ctk.CTkLabel(low_frame, text="0", 
+                                             font=ctk.CTkFont(size=20, weight="bold"),
+                                             text_color="green")
+        self.anomaly_low_label.pack()
+        
+        # Recent anomalies list
+        list_frame = ctk.CTkFrame(anomaly_tab)
+        list_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        ctk.CTkLabel(list_frame, text="📋 Recent Anomalies", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+        
+        self.anomaly_list_text = ctk.CTkTextbox(list_frame, 
+                                               font=ctk.CTkFont(family="Courier", size=10))
+        self.anomaly_list_text.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # Sensor health
+        health_frame = ctk.CTkFrame(anomaly_tab)
+        health_frame.pack(fill="x", padx=10, pady=10)
+        
+        ctk.CTkLabel(health_frame, text="🏥 Sensor Health Status", 
+                    font=ctk.CTkFont(size=14, weight="bold")).pack(pady=5)
+        
+        self.sensor_health_text = ctk.CTkTextbox(health_frame, height=150)
+        self.sensor_health_text.pack(fill="x", padx=10, pady=5)
     
     def create_event_log_tab(self):
         """Create event log display"""
@@ -1052,6 +1325,9 @@ class SmartHomeModernApp(ctk.CTk):
         # Run controller
         self.controller.process_cycle(hour, season, self.num_people, verbose=False)
         
+        # Process AI cycle (predictions and anomaly detection)
+        self.process_ai_cycle()
+        
         # Store data in database
         if self.data_storage_enabled and self.db.is_connected():
             self.store_simulation_data()
@@ -1113,7 +1389,19 @@ class SmartHomeModernApp(ctk.CTk):
                         self.cumulative_xml_size += data_size
                     self.cumulative_message_count += 1
                     
-                    # Store in database with format metadata
+                    # Apply security measures (encryption + signature)
+                    sensor_data = {
+                        'sensor_id': sensor.sensor_id,
+                        'sensor_type': sensor.sensor_type,
+                        'room': sensor.room.name,
+                        'value': float(sensor.value),
+                        'unit': sensor.get_unit(),
+                        'transmission_format': format_str,
+                        'serialized_data': data_str[:500] if len(data_str) > 500 else data_str
+                    }
+                    secured_data = self.security_manager.secure_sensor_data(sensor_data, sensor.sensor_id)
+                    
+                    # Store in database with security metadata
                     self.db.store_sensor_reading(
                         sensor_id=sensor.sensor_id,
                         sensor_type=sensor.sensor_type,
@@ -1122,7 +1410,9 @@ class SmartHomeModernApp(ctk.CTk):
                         unit=sensor.get_unit(),
                         simulation_time=self.current_time,
                         transmission_format=format_str,
-                        serialized_data=data_str[:500] if len(data_str) > 500 else data_str  # Limit size
+                        serialized_data=data_str[:500] if len(data_str) > 500 else data_str,
+                        encrypted=secured_data.get('encryption_enabled', False),
+                        security_level=secured_data.get('security_level', 'low')
                     )
             
             # Store actuator states
@@ -1211,6 +1501,196 @@ class SmartHomeModernApp(ctk.CTk):
         except Exception as e:
             print(f"Error storing simulation data: {e}")
     
+    def process_ai_cycle(self):
+        """Process AI predictions, anomaly detection, edge filtering, gateway, and ML prescriptive control"""
+        try:
+            # Update gateway with renewable energy status
+            renewable_power = self.energy_system.current_solar + self.energy_system.current_wind
+            self.gateway.update_renewable_energy_status(renewable_power)
+            
+            # Prepare energy data for AI
+            energy_data = {
+                'solar': self.energy_system.current_solar,
+                'wind': self.energy_system.current_wind,
+                'consumption': self.energy_system.total_consumption,
+                'battery_percentage': self.energy_system.get_battery_percentage(),
+                'solar_power': self.energy_system.current_solar,
+                'wind_power': self.energy_system.current_wind,
+                'battery_level': self.energy_system.get_battery_percentage(),
+                'renewable_available': renewable_power
+            }
+            
+            # Prepare sensor readings with edge preprocessing
+            sensor_readings = []
+            processed_sensor_data = {}
+            
+            for sensor in self.sensors:
+                # Apply edge preprocessing for environmental sensors
+                if sensor.sensor_type in ['Temperature', 'Humidity', 'Light', 'CO2', 'SoilMoisture']:
+                    processed = self.edge_node.process_sensor_data(
+                        sensor.sensor_id, 
+                        float(sensor.value), 
+                        sensor.sensor_type
+                    )
+                    if processed:  # Not filtered out
+                        sensor_readings.append({
+                            'sensor_id': sensor.sensor_id,
+                            'sensor_type': sensor.sensor_type,
+                            'value': processed['value'],
+                            'room': sensor.room.name,
+                            'quality': processed.get('quality', 'raw')
+                        })
+                        
+                        # Store for ML controller
+                        processed_sensor_data[sensor.sensor_type.lower()] = processed['value']
+                else:
+                    # Other sensors bypass edge filtering
+                    sensor_readings.append({
+                        'sensor_id': sensor.sensor_id,
+                        'sensor_type': sensor.sensor_type,
+                        'value': float(sensor.value),
+                        'room': sensor.room.name
+                    })
+                    processed_sensor_data[sensor.sensor_type.lower()] = float(sensor.value)
+                
+                # Send data through gateway with appropriate protocol
+                protocol = 'soap' if sensor.sensor_type == 'Camera' else 'json'
+                priority = 'high' if sensor.sensor_type in ['Gas', 'CO2', 'Vibration'] else 'normal'
+                
+                self.gateway.receive_sensor_data(
+                    data={
+                        'sensor_id': sensor.sensor_id,
+                        'sensor_type': sensor.sensor_type,
+                        'value': float(sensor.value),
+                        'room': sensor.room.name,
+                        'timestamp': self.current_time.isoformat()
+                    },
+                    protocol=protocol,
+                    priority=priority
+                )
+            
+            # Process AI cycle (existing anomaly detection and predictions)
+            self.ai_manager.process_cycle(energy_data, sensor_readings, self.current_time)
+            
+            # ML Prescriptive Control - predict actuator states
+            if self.ml_enabled and self.cycle_count > 50:
+                # Prepare data for ML controller
+                ml_sensor_data = {
+                    'temperature': processed_sensor_data.get('temperature', 20.0),
+                    'humidity': processed_sensor_data.get('humidity', 50.0),
+                    'light_level': processed_sensor_data.get('light', 300.0),
+                    'motion_detected': processed_sensor_data.get('motion', 0) > 0,
+                    'co2_level': processed_sensor_data.get('co2', 400.0),
+                    'gas_level': 0.0,  # Simplified
+                    'soil_moisture': processed_sensor_data.get('soilmoisture', 50.0),
+                    'vibration': processed_sensor_data.get('vibration', 0.0)
+                }
+                
+                ml_time_data = {
+                    'hour_of_day': self.current_time.hour,
+                    'occupancy': self.num_people
+                }
+                
+                # Get ML predictions
+                predictions = self.ml_controller.predict_actuator_states(
+                    ml_sensor_data, energy_data, ml_time_data
+                )
+                
+                # Apply ML predictions to actuators (with safety checks)
+                if predictions.get('status') == 'success':
+                    self._apply_ml_predictions(predictions['predictions'])
+            
+            # Train ML model periodically (every 100 cycles after initial data collection)
+            if self.cycle_count == 100 and not self.ml_enabled:
+                print("Training ML Prescriptive Controller...")
+                self.ml_controller.generate_synthetic_training_data(1000)
+                results = self.ml_controller.train_models()
+                if results:
+                    self.ml_enabled = True
+                    print(f"ML Controller trained successfully!")
+                    self.event_log.add_event("system", 
+                        "ML Prescriptive Controller trained and activated", "info")
+            
+            # Collect training data for ML model
+            if self.cycle_count < 100:
+                self._collect_ml_training_data(ml_sensor_data if 'ml_sensor_data' in locals() else {}, 
+                                              energy_data, 
+                                              ml_time_data if 'ml_time_data' in locals() else {})
+            
+        except Exception as e:
+            print(f"Error in AI processing: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _apply_ml_predictions(self, predictions: dict):
+        """Apply ML predictions to actuators with safety constraints"""
+        try:
+            for actuator_type, prediction in predictions.items():
+                action = prediction.get('action')
+                confidence = prediction.get('confidence', 0)
+                
+                # Only apply if confidence is high enough
+                if confidence < 0.7:
+                    continue
+                
+                # Find matching actuators
+                if actuator_type == 'hvac':
+                    for actuator in self.actuators:
+                        if isinstance(actuator, (HeaterActuator, ACActuator, FanActuator)):
+                            if action == 'turn_on':
+                                actuator.turn_on()
+                            else:
+                                actuator.turn_off()
+                
+                elif actuator_type == 'lighting':
+                    for actuator in self.actuators:
+                        if isinstance(actuator, LightActuator):
+                            if action == 'turn_on' and self.num_people > 0:
+                                actuator.turn_on()
+                            elif action == 'turn_off':
+                                actuator.turn_off()
+                
+                elif actuator_type == 'irrigation':
+                    for actuator in self.actuators:
+                        if isinstance(actuator, IrrigationActuator):
+                            if action == 'turn_on':
+                                actuator.start_irrigation(5)
+                            else:
+                                actuator.stop_irrigation()
+        
+        except Exception as e:
+            print(f"Error applying ML predictions: {e}")
+    
+    def _collect_ml_training_data(self, sensor_data: dict, energy_data: dict, time_data: dict):
+        """Collect training data for ML model"""
+        try:
+            if not sensor_data or not energy_data or not time_data:
+                return
+            
+            # Extract current actuator states
+            actuator_states = {
+                'hvac': 0,
+                'lighting': 0,
+                'irrigation': 0,
+                'ventilation': 0,
+                'alarm': 0
+            }
+            
+            for actuator in self.actuators:
+                if isinstance(actuator, (HeaterActuator, ACActuator, FanActuator)) and actuator.state:
+                    actuator_states['hvac'] = 1
+                elif isinstance(actuator, LightActuator) and actuator.state:
+                    actuator_states['lighting'] = 1
+                elif isinstance(actuator, IrrigationActuator) and actuator.state:
+                    actuator_states['irrigation'] = 1
+            
+            # Add training sample
+            features = self.ml_controller.extract_features(sensor_data, energy_data, time_data)
+            self.ml_controller.add_training_sample(features, actuator_states)
+            
+        except Exception as e:
+            print(f"Error collecting ML training data: {e}")
+    
     def update_ui(self):
         """Update all UI elements - only active tab for performance"""
         # Date/Time
@@ -1238,6 +1718,17 @@ class SmartHomeModernApp(ctk.CTk):
         security_text = "Armed" if self.security.armed else "Disarmed"
         self.security_label.configure(text=f"{security_icon} Security: {security_text}")
         
+        # Security status
+        security_status = self.security_manager.get_security_status()
+        security_text = f"Level: {security_status['security_level'].upper()}\n"
+        if 'encryption' in security_status:
+            enc_stats = security_status['encryption']
+            security_text += f"🔒 Encrypted: {enc_stats['total_encrypted']}\n"
+        if 'authentication' in security_status:
+            auth_stats = security_status['authentication']
+            security_text += f"✓ Devices: {auth_stats['authenticated_devices']}"
+        self.security_status_label.configure(text=security_text)
+        
         # Quick stats
         stats = f"⚡ {self.energy_system.current_solar:.0f}W Solar\n"
         stats += f"🌬️ {self.energy_system.current_wind:.0f}W Wind\n"
@@ -1255,6 +1746,13 @@ class SmartHomeModernApp(ctk.CTk):
             self.update_energy_analytics()
         elif active_tab == "📊 Data Size Analytics":
             self.update_data_size_analytics()
+        elif active_tab == "🤖 AI Intelligence":
+            # Check which nested AI tab is active
+            ai_subtab = self.ai_tabview.get()
+            if ai_subtab == "📈 Predictions":
+                self.update_ai_predictions()
+            elif ai_subtab == "🔍 Anomaly Detection":
+                self.update_anomaly_detection()
         elif active_tab == "⚙️ Devices":
             self.update_device_display()
         elif active_tab == "📝 Event Log":
@@ -1515,6 +2013,135 @@ class SmartHomeModernApp(ctk.CTk):
         
         # Auto-scroll to bottom
         self.event_log_text.see("end")
+    
+    def update_ai_predictions(self):
+        """Update AI predictions dashboard"""
+        try:
+            # Get latest prediction
+            prediction = self.ai_manager.last_prediction
+            
+            if prediction and prediction['confidence'] > 0:
+                # Update prediction values
+                self.ai_solar_pred_label.configure(text=f"{prediction['solar']:.0f} W")
+                self.ai_wind_pred_label.configure(text=f"{prediction['wind']:.0f} W")
+                self.ai_consumption_pred_label.configure(text=f"{prediction['consumption']:.0f} W")
+                self.ai_battery_pred_label.configure(text=f"{prediction['battery']:.1f} %")
+                
+                # Update confidence
+                confidence = prediction['confidence']
+                self.ai_confidence_label.configure(text=f"{confidence:.0f}%")
+                self.ai_confidence_bar.set(confidence / 100)
+                
+                # Get and display recommendations
+                recommendations = self.ai_manager.energy_predictor.get_recommendations(prediction)
+                self.ai_recommendations_text.delete("1.0", "end")
+                if recommendations:
+                    for rec in recommendations:
+                        self.ai_recommendations_text.insert("end", f"{rec}\n\n")
+                else:
+                    self.ai_recommendations_text.insert("1.0", "No specific recommendations at this time.\n\nSystem is operating normally.")
+                
+                # Display accuracy metrics
+                accuracy = self.ai_manager.energy_predictor.get_accuracy_metrics()
+                self.ai_accuracy_text.delete("1.0", "end")
+                
+                accuracy_text = "Prediction Accuracy (Mean Absolute Error):\n\n"
+                for metric_name, metric_data in accuracy.items():
+                    if metric_data['samples'] > 0:
+                        accuracy_text += f"{metric_name.upper()}:\n"
+                        accuracy_text += f"  MAE: {metric_data['mae']:.2f}\n"
+                        accuracy_text += f"  Samples: {metric_data['samples']}\n\n"
+                
+                self.ai_accuracy_text.insert("1.0", accuracy_text)
+                
+                # Update status
+                data_points = len(self.ai_manager.energy_predictor.solar_history)
+                self.ai_status_label.configure(
+                    text=f"🤖 AI Status: Active | {data_points} data points | {confidence:.0f}% confidence"
+                )
+            else:
+                # Not enough data yet
+                self.ai_status_label.configure(
+                    text="🤖 AI Status: Gathering data... (need 20+ cycles)"
+                )
+                self.ai_recommendations_text.delete("1.0", "end")
+                self.ai_recommendations_text.insert("1.0", "⏳ Collecting data to build prediction models...\n\nPlease run the simulation for at least 20 cycles.")
+                
+        except Exception as e:
+            print(f"Error updating AI predictions: {e}")
+    
+    def update_anomaly_detection(self):
+        """Update anomaly detection dashboard"""
+        try:
+            # Get anomaly statistics
+            stats = self.ai_manager.anomaly_detector.get_anomaly_statistics()
+            
+            # Update counters
+            self.anomaly_total_label.configure(text=str(stats['total_anomalies']))
+            self.anomaly_critical_label.configure(text=str(stats['by_severity'].get('critical', 0)))
+            self.anomaly_high_label.configure(text=str(stats['by_severity'].get('high', 0)))
+            self.anomaly_medium_label.configure(text=str(stats['by_severity'].get('medium', 0)))
+            self.anomaly_low_label.configure(text=str(stats['by_severity'].get('low', 0)))
+            
+            # Display recent anomalies
+            recent_anomalies = self.ai_manager.anomaly_detector.get_recent_anomalies(20)
+            self.anomaly_list_text.delete("1.0", "end")
+            
+            if recent_anomalies:
+                for anomaly in reversed(recent_anomalies):  # Most recent first
+                    timestamp = anomaly['timestamp'].strftime("%H:%M:%S")
+                    severity_icon = {
+                        'critical': '🔴',
+                        'high': '🟠',
+                        'medium': '🟡',
+                        'low': '🟢'
+                    }.get(anomaly['severity'], '⚪')
+                    
+                    anomaly_line = f"{severity_icon} [{timestamp}] {anomaly['room']} - {anomaly['description']}\n"
+                    self.anomaly_list_text.insert("end", anomaly_line)
+            else:
+                self.anomaly_list_text.insert("1.0", "✅ No anomalies detected.\n\nAll sensors operating within normal parameters.")
+            
+            # Display sensor health
+            sensor_health = self.ai_manager.anomaly_detector.get_sensor_health()
+            self.sensor_health_text.delete("1.0", "end")
+            
+            if sensor_health:
+                # Show worst sensors first
+                health_text = "Sensor Health Summary:\n\n"
+                
+                # Count by status
+                status_counts = {'healthy': 0, 'warning': 0, 'degraded': 0, 'critical': 0}
+                for sensor in sensor_health:
+                    status_counts[sensor['status']] += 1
+                
+                health_text += f"✅ Healthy: {status_counts['healthy']} | "
+                health_text += f"⚠️ Warning: {status_counts['warning']} | "
+                health_text += f"🟠 Degraded: {status_counts['degraded']} | "
+                health_text += f"🔴 Critical: {status_counts['critical']}\n\n"
+                
+                # Show problematic sensors
+                problematic = [s for s in sensor_health if s['status'] != 'healthy'][:10]
+                if problematic:
+                    health_text += "Sensors Requiring Attention:\n"
+                    for sensor in problematic:
+                        status_icon = {
+                            'warning': '⚠️',
+                            'degraded': '🟠',
+                            'critical': '🔴'
+                        }.get(sensor['status'], '✅')
+                        health_text += f"{status_icon} {sensor['sensor_id']} ({sensor['room']}) - "
+                        health_text += f"Health: {sensor['health_score']}% | "
+                        health_text += f"Anomalies: {sensor['recent_anomalies']}\n"
+                else:
+                    health_text += "\n✅ All sensors are operating normally!"
+                
+                self.sensor_health_text.insert("1.0", health_text)
+            else:
+                self.sensor_health_text.insert("1.0", "⏳ Gathering sensor data...\n\nHealth monitoring will be available after a few cycles.")
+                
+        except Exception as e:
+            print(f"Error updating anomaly detection: {e}")
     
     def toggle_auto_run(self):
         """Toggle auto-run mode"""

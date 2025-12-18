@@ -378,3 +378,33 @@ class DryerActuator(Actuator):
     def get_consumption(self) -> float:
         """Minimal power consumption"""
         return self.power_consumption if self.state else 0.1  # Standby power
+
+# ============================================================================
+# IRRIGATION ACTUATOR
+# ============================================================================
+
+class IrrigationActuator(Actuator):
+    """Controls irrigation system for plants/garden"""
+    
+    def __init__(self, actuator_id: str, room: Room):
+        super().__init__(actuator_id, room, "Irrigation")
+        self.power_consumption = 50  # Watts (water pump)
+        self.flow_rate = 10.0  # Liters per minute
+        self.water_delivered = 0.0  # Total liters
+        self.irrigation_duration = 0  # minutes
+        
+    def start_irrigation(self, duration_minutes: int = 5):
+        """Start irrigation for specified duration"""
+        self.turn_on()
+        self.irrigation_duration = duration_minutes
+        
+    def stop_irrigation(self):
+        """Stop irrigation"""
+        self.turn_off()
+        self.irrigation_duration = 0
+    
+    def get_water_delivered(self) -> float:
+        """Calculate water delivered during current session"""
+        if self.state and self.irrigation_duration > 0:
+            return self.flow_rate * self.irrigation_duration
+        return 0.0

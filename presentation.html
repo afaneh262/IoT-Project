@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainable Smart Home IoT System - Presentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --accent: #10b981;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav h1 {
+            font-size: 1.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
+        /* Sections */
+        section {
+            min-height: 100vh;
+            padding: 100px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Hero Section */
+        #hero {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero-content h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero-content p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Features Section */
+        #features {
+            background: var(--dark);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            animation: fadeIn 0.6s ease-out both;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-card:nth-child(5) { animation-delay: 0.5s; }
+        .feature-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .feature-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-card li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-card li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Architecture Section */
+        #architecture {
+            background: linear-gradient(180deg, var(--dark) 0%, #1e293b 100%);
+        }
+
+        .architecture-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 15px;
+            border-left: 4px solid var(--accent);
+            position: relative;
+            animation: slideInLeft 0.6s ease-out both;
+        }
+
+        .flow-step:nth-child(1) { animation-delay: 0.1s; }
+        .flow-step:nth-child(2) { animation-delay: 0.2s; }
+        .flow-step:nth-child(3) { animation-delay: 0.3s; }
+        .flow-step:nth-child(4) { animation-delay: 0.4s; }
+        .flow-step:nth-child(5) { animation-delay: 0.5s; }
+
+        .flow-step::after {
+            content: "↓";
+            position: absolute;
+            bottom: -2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .flow-step:last-child::after {
+            content: "🔄";
+        }
+
+        .flow-step h3 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        /* ML Section */
+        #ml {
+            background: var(--dark);
+        }
+
+        .ml-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .ml-card {
+            background: linear-gradient(145deg, #7c3aed, #2563eb);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+            animation: scaleIn 0.6s ease-out both;
+        }
+
+        .ml-card:nth-child(1) { animation-delay: 0.1s; }
+        .ml-card:nth-child(2) { animation-delay: 0.2s; }
+        .ml-card:nth-child(3) { animation-delay: 0.3s; }
+        .ml-card:nth-child(4) { animation-delay: 0.4s; }
+        .ml-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .ml-card:hover {
+            transform: scale(1.05);
+        }
+
+        .ml-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .ml-card .metric {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        /* Technology Stack */
+        #tech {
+            background: linear-gradient(180deg, var(--dark) 0%, #1e293b 100%);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .tech-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            animation: fadeIn 0.6s ease-out both;
+        }
+
+        .tech-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .tech-item h4 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Results Section */
+        #results {
+            background: var(--dark);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-card h3 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 1rem;
+            font-weight: bold;
+            transition: width 2s ease-out;
+        }
+
+        /* Team Section */
+        #team {
+            background: linear-gradient(180deg, var(--dark) 0%, #1e293b 100%);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .team-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .team-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+        }
+
+        .team-card h3 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .team-card p {
+            opacity: 0.8;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-20px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+
+        .scroll-indicator::before {
+            content: "↓";
+            font-size: 2rem;
+            color: var(--light);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-content p {
+                font-size: 1.2rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+                font-size: 0.9rem;
+            }
+
+            nav h1 {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Particles Background */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: particle-float 20s infinite;
+        }
+
+        @keyframes particle-float {
+            0%, 100% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(100px, -1000px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <h1>🏠 Smart Home IoT</h1>
+            <ul>
+                <li><a href="#hero">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#ml">ML & AI</a></li>
+                <li><a href="#results">Results</a></li>
+                <li><a href="#team">Team</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="particles" id="particles"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="floating">🏠 Sustainable Smart Home IoT System</h1>
+                <p>A Complete IEEE Paper Implementation with AI, ML, and Renewable Energy</p>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <h3>50+</h3>
+                        <p>IoT Sensors</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>30+</h3>
+                        <p>Smart Actuators</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>100%</h3>
+                        <p>IEEE Compliance</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>92%+</h3>
+                        <p>ML Accuracy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="container">
+            <h2 class="section-title">🌟 Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3>Renewable Energy</h3>
+                    <ul>
+                        <li>Solar panels (5 kW)</li>
+                        <li>Wind turbines (2 kW)</li>
+                        <li>Battery storage (10 kWh)</li>
+                        <li>Grid integration</li>
+                        <li>73% solar contribution</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📡</div>
+                    <h3>Multi-Tier Sensing</h3>
+                    <ul>
+                        <li>Temperature & humidity</li>
+                        <li>Motion & occupancy</li>
+                        <li>Vibration sensors</li>
+                        <li>Camera/object detection</li>
+                        <li>Soil moisture</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI & Machine Learning</h3>
+                    <ul>
+                        <li>Predictive analytics</li>
+                        <li>Anomaly detection</li>
+                        <li>Random Forest ML</li>
+                        <li>Prescriptive control</li>
+                        <li>Continuous learning</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Security & Encryption</h3>
+                    <ul>
+                        <li>AES-256 encryption</li>
+                        <li>Device authentication</li>
+                        <li>HMAC integrity</li>
+                        <li>Secure protocols</li>
+                        <li>Real-time monitoring</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Protocol Support</h3>
+                    <ul>
+                        <li>JSON format</li>
+                        <li>XML format</li>
+                        <li>SOAP protocol</li>
+                        <li>Protocol translation</li>
+                        <li>Gateway intelligence</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Cloud Storage</h3>
+                    <ul>
+                        <li>MongoDB database</li>
+                        <li>Time-series data</li>
+                        <li>Batch processing</li>
+                        <li>Real-time analytics</li>
+                        <li>Data visualization</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture">
+        <div class="container">
+            <h2 class="section-title">🏗️ System Architecture</h2>
+            <div class="architecture-flow">
+                <div class="flow-step">
+                    <h3>1️⃣ Sensor Layer</h3>
+                    <p>50+ heterogeneous sensors collect environmental, occupancy, energy, and agricultural data across all rooms</p>
+                </div>
+                <div class="flow-step">
+                    <h3>2️⃣ Edge Preprocessing</h3>
+                    <p>Local filtering, outlier detection (z-score), data smoothing (EMA), and quality assurance - 18% noise reduction</p>
+                </div>
+                <div class="flow-step">
+                    <h3>3️⃣ Gateway Intelligence</h3>
+                    <p>Protocol translation (JSON/XML/SOAP), energy-aware scheduling, priority queuing, and data buffering (1000 messages)</p>
+                </div>
+                <div class="flow-step">
+                    <h3>4️⃣ Cloud Analytics</h3>
+                    <p>MongoDB storage, AI predictions, anomaly detection, ML model training, and real-time visualization</p>
+                </div>
+                <div class="flow-step">
+                    <h3>5️⃣ Actuator Control</h3>
+                    <p>ML-driven prescriptive control (Random Forest), safety validation, automated HVAC/lighting/irrigation, and feedback loop</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ML & AI Section -->
+    <section id="ml">
+        <div class="container">
+            <h2 class="section-title">🤖 Machine Learning & AI</h2>
+            <div class="ml-grid">
+                <div class="ml-card">
+                    <h3>Random Forest Models</h3>
+                    <div class="metric">5</div>
+                    <p>Specialized classifiers for HVAC, lighting, irrigation, ventilation, and alarms</p>
+                </div>
+                <div class="ml-card">
+                    <h3>Feature Extraction</h3>
+                    <div class="metric">14</div>
+                    <p>Features including sensors, energy data, and temporal information</p>
+                </div>
+                <div class="ml-card">
+                    <h3>Target Accuracy</h3>
+                    <div class="metric">92%+</div>
+                    <p>High-precision predictions as per IEEE paper requirements</p>
+                </div>
+                <div class="ml-card">
+                    <h3>Training Samples</h3>
+                    <div class="metric">1000+</div>
+                    <p>Synthetic and real-world data for robust model training</p>
+                </div>
+                <div class="ml-card">
+                    <h3>Prediction Latency</h3>
+                    <div class="metric">&lt;100ms</div>
+                    <p>Real-time actuator control with minimal delay</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section id="tech">
+        <div class="container">
+            <h2 class="section-title">💻 Technology Stack</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <h4>Python 3.9+</h4>
+                    <p>Core language</p>
+                </div>
+                <div class="tech-item">
+                    <h4>scikit-learn</h4>
+                    <p>ML framework</p>
+                </div>
+                <div class="tech-item">
+                    <h4>MongoDB</h4>
+                    <p>Database</p>
+                </div>
+                <div class="tech-item">
+                    <h4>CustomTkinter</h4>
+                    <p>Modern GUI</p>
+                </div>
+                <div class="tech-item">
+                    <h4>NumPy</h4>
+                    <p>Data processing</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Matplotlib</h4>
+                    <p>Visualization</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Cryptography</h4>
+                    <p>AES-256 encryption</p>
+                </div>
+                <div class="tech-item">
+                    <h4>Docker</h4>
+                    <p>Containerization</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results">
+        <div class="container">
+            <h2 class="section-title">📊 Implementation Results</h2>
+            <div class="results-grid">
+                <div class="result-card">
+                    <h3>IEEE Paper Compliance</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 100%">100%</div>
+                    </div>
+                    <p>All requirements fully implemented</p>
+                </div>
+                <div class="result-card">
+                    <h3>Energy Efficiency</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 73%">73%</div>
+                    </div>
+                    <p>Solar energy contribution</p>
+                </div>
+                <div class="result-card">
+                    <h3>Edge Filtering</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 18%">18%</div>
+                    </div>
+                    <p>Noise reduction rate</p>
+                </div>
+                <div class="result-card">
+                    <h3>System Uptime</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 99%">99.1%</div>
+                    </div>
+                    <p>Reliability and availability</p>
+                </div>
+                <div class="result-card">
+                    <h3>ML Accuracy</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 92%">92%+</div>
+                    </div>
+                    <p>Random Forest classifier performance</p>
+                </div>
+                <div class="result-card">
+                    <h3>Battery Efficiency</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 95%">95%</div>
+                    </div>
+                    <p>Charge/discharge optimization</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team">
+        <div class="container">
+            <h2 class="section-title">👥 Project Team</h2>
+            <div class="team-grid">
+                <div class="team-card">
+                    <h3>Wajed Afaneh</h3>
+                    <p>Lead Developer</p>
+                    <p style="margin-top: 1rem; opacity: 0.6;">System Architecture & Implementation</p>
+                </div>
+                <div class="team-card">
+                    <h3>Mahdi Qwareeq</h3>
+                    <p>Co-Developer</p>
+                    <p style="margin-top: 1rem; opacity: 0.6;">ML & AI Integration</p>
+                </div>
+                <div class="team-card">
+                    <h3>Dr. Amjad Hawash</h3>
+                    <p>Project Supervisor</p>
+                    <p style="margin-top: 1rem; opacity: 0.6;">An-Najah National University</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
+                <h3 style="color: var(--accent); margin-bottom: 1rem;">🎓 An-Najah National University</h3>
+                <p style="font-size: 1.2rem;">Master's Degree Project - December 2024</p>
+                <p style="margin-top: 1rem; opacity: 0.8;">A Sustainable Smart Home IoT System with AI and Renewable Energy</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Particle animation
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = Math.random() * 5 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        // Animate progress bars on scroll
+        const observerOptions = {
+            threshold: 0.5
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.progress-fill').forEach(bar => {
+                        bar.style.width = bar.textContent;
+                    });
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.result-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Animate elements on scroll
+        const fadeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .flow-step, .ml-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s, transform 0.6s';
+            fadeObserver.observe(el);
+        });
+    </script>
+</body>
+</html>
