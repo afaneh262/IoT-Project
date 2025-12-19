@@ -128,19 +128,6 @@
       );
     }
 
-    function ScientificFooter() {
-      return (
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-[11px] text-slate-500">
-          <div className="min-w-0 truncate">
-            Units: kW (power), kWh (energy), ppm (CO₂), lux (illuminance). Models: occupancy-driven load scaling; fixed resource generation.
-          </div>
-          <div className="shrink-0 whitespace-nowrap">
-            Reference: IEEE-based smart home IoT architecture (implementation-aligned)
-          </div>
-        </div>
-      );
-    }
-
     function ScenarioComparisonTable({ title, rows, highlight }) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-5">
@@ -187,9 +174,6 @@
           <div className="relative mx-auto flex h-full max-w-7xl flex-col px-6 py-8 md:px-10 md:py-10 min-h-0">
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
               {children}
-            </div>
-            <div className="shrink-0">
-              <ScientificFooter />
             </div>
           </div>
         </div>
@@ -278,30 +262,6 @@
       };
     }
 
-    function OccupancySelector({ value, onChange }) {
-      return (
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-3 py-1.5 text-xs text-slate-700 backdrop-blur">
-          <span className="font-semibold text-slate-900">Occupancy</span>
-          <div className="inline-flex gap-1">
-            {[4, 5, 6, 7].map((n) => (
-              <button
-                key={n}
-                onClick={() => onChange(n)}
-                className={classNames(
-                  'rounded-full px-2.5 py-1 transition',
-                  n === value ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                )}
-                type="button"
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          <span className="text-slate-500">people</span>
-        </div>
-      );
-    }
-
     function ProgressRow({ label, value, active }) {
       const [width, setWidth] = useState('0%');
 
@@ -331,8 +291,8 @@
     }
 
     function SlidesApp() {
-      const [occupancy, setOccupancy] = useState(4);
-      const scenario = useMemo(() => computeScenario(occupancy), [occupancy]);
+      const occupancy = 4;
+      const scenario = useMemo(() => computeScenario(occupancy), []);
 
       const slides = useMemo(() => {
         const commonTitle = (
@@ -1532,7 +1492,6 @@
               </SlideShell>
             )
           },
-
           {
             key: 'future',
             render: () => (
@@ -1618,10 +1577,6 @@
             <div className="h-1 bg-slate-200">
               <div className="h-full bg-gradient-to-r from-emerald-500 to-brand-600" style={{ width: progress + '%' }} />
             </div>
-          </div>
-
-          <div className="fixed right-6 top-4 z-50">
-            <OccupancySelector value={occupancy} onChange={setOccupancy} />
           </div>
 
           <div className="flex h-full items-center justify-center p-4 md:p-10">
