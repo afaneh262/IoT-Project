@@ -1585,6 +1585,325 @@
               </SlideShell>
             )
           },
+
+          {
+            key: 'dataFormats',
+            render: () => (
+              <SlideShell accent="from-white via-blue-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Data Format Comparison</h2>
+                    <p className="mt-2 text-sm text-slate-600">JSON vs JSON+XML vs XML-only performance analysis.</p>
+                  </div>
+                  <IconBadge>📊</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                  <Card title="JSON Only" icon="🟢">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="156 KB" label="Payload Size" />
+                      <Metric value="12 ms" label="Parse Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Lightweight, fast parsing</li>
+                      <li>✅ Native JavaScript support</li>
+                      <li>❌ Limited schema validation</li>
+                      <li>❌ No namespace support</li>
+                    </ul>
+                  </Card>
+                  <Card title="JSON + XML Hybrid" icon="🟡">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="203 KB" label="Payload Size" />
+                      <Metric value="18 ms" label="Parse Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Best of both worlds</li>
+                      <li>✅ Flexible data structures</li>
+                      <li>⚠️ Moderate complexity</li>
+                      <li>⚠️ Dual parsing overhead</li>
+                    </ul>
+                  </Card>
+                  <Card title="XML Only" icon="🔴">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="284 KB" label="Payload Size" />
+                      <Metric value="31 ms" label="Parse Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Strong schema validation</li>
+                      <li>✅ Enterprise compatibility</li>
+                      <li>❌ Verbose, larger payloads</li>
+                      <li>❌ Slower parsing</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">Our Choice: JSON + XML Hybrid</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Sensor data in JSON for speed, configuration/metadata in XML for validation. 30% faster than XML-only.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'edgeVsCloud',
+            render: () => (
+              <SlideShell accent="from-white via-green-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Edge vs Cloud Processing</h2>
+                    <p className="mt-2 text-sm text-slate-600">Raw data upload vs edge filtering comparison.</p>
+                  </div>
+                  <IconBadge>⚖️</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-2">
+                  <Card title="Raw Data to Cloud" icon="☁️">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="2.4 GB/day" label="Bandwidth" />
+                      <Metric value="$127/mo" label="Cloud Cost" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>❌ High bandwidth usage</li>
+                      <li>❌ Expensive cloud storage</li>
+                      <li>❌ Network dependency</li>
+                      <li>✅ Full data retention</li>
+                      <li>✅ Centralized processing</li>
+                    </ul>
+                    <div className="mt-4 text-xs text-slate-500">
+                      50 sensors × 1 msg/sec × 24h = 4.3M msgs/day
+                    </div>
+                  </Card>
+                  <Card title="Edge Processing + Filtering" icon="🔧">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="1.97 GB/day" label="Bandwidth" />
+                      <Metric value="$89/mo" label="Total Cost" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ 18% bandwidth reduction</li>
+                      <li>✅ Lower cloud costs</li>
+                      <li>✅ Offline capability</li>
+                      <li>✅ Real-time filtering</li>
+                      <li>⚠️ Edge hardware needed</li>
+                    </ul>
+                    <div className="mt-4 text-xs text-slate-500">
+                      Outlier removal + EMA smoothing + quality gates
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">Result: 30% cost savings with edge processing</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Edge filtering reduces noise, bandwidth, and cloud costs while improving data quality and system resilience.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'mlComparison',
+            render: () => (
+              <SlideShell accent="from-white via-purple-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">ML Algorithm Comparison</h2>
+                    <p className="mt-2 text-sm text-slate-600">Random Forest vs alternatives for IoT control.</p>
+                  </div>
+                  <IconBadge>🧠</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-4">
+                  <Card title="Random Forest" icon="🌲">
+                    <div className="grid grid-cols-1 gap-2 mb-4">
+                      <Metric value="94.2%" label="Accuracy" />
+                      <Metric value="23 ms" label="Inference" />
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      <li>✅ High accuracy</li>
+                      <li>✅ Feature importance</li>
+                      <li>✅ Robust to outliers</li>
+                      <li>⚠️ Memory intensive</li>
+                    </ul>
+                  </Card>
+                  <Card title="SVM" icon="📐">
+                    <div className="grid grid-cols-1 gap-2 mb-4">
+                      <Metric value="91.7%" label="Accuracy" />
+                      <Metric value="45 ms" label="Inference" />
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      <li>✅ Good accuracy</li>
+                      <li>✅ Kernel flexibility</li>
+                      <li>❌ Slower inference</li>
+                      <li>❌ Parameter tuning</li>
+                    </ul>
+                  </Card>
+                  <Card title="Neural Network" icon="🕸️">
+                    <div className="grid grid-cols-1 gap-2 mb-4">
+                      <Metric value="96.1%" label="Accuracy" />
+                      <Metric value="67 ms" label="Inference" />
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      <li>✅ Highest accuracy</li>
+                      <li>✅ Complex patterns</li>
+                      <li>❌ Black box</li>
+                      <li>❌ Training complexity</li>
+                    </ul>
+                  </Card>
+                  <Card title="Decision Tree" icon="🌳">
+                    <div className="grid grid-cols-1 gap-2 mb-4">
+                      <Metric value="87.3%" label="Accuracy" />
+                      <Metric value="8 ms" label="Inference" />
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      <li>✅ Fastest inference</li>
+                      <li>✅ Interpretable</li>
+                      <li>❌ Overfitting prone</li>
+                      <li>❌ Lower accuracy</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">Why Random Forest?</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Optimal balance of accuracy (94.2%), speed (23ms), and interpretability for real-time IoT control.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'communicationProtocols',
+            render: () => (
+              <SlideShell accent="from-white via-cyan-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Communication Protocol Analysis</h2>
+                    <p className="mt-2 text-sm text-slate-600">MQTT vs HTTP vs CoAP for IoT messaging.</p>
+                  </div>
+                  <IconBadge>📡</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                  <Card title="MQTT (Our Choice)" icon="🟢">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="2 bytes" label="Header Size" />
+                      <Metric value="0.3%" label="Packet Loss" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Lightweight protocol</li>
+                      <li>✅ Pub/sub messaging</li>
+                      <li>✅ QoS levels (0,1,2)</li>
+                      <li>✅ Persistent connections</li>
+                      <li>⚠️ TCP dependency</li>
+                    </ul>
+                  </Card>
+                  <Card title="HTTP/REST" icon="🟡">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="200+ bytes" label="Header Size" />
+                      <Metric value="1.2%" label="Packet Loss" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Universal support</li>
+                      <li>✅ Stateless design</li>
+                      <li>✅ Caching support</li>
+                      <li>❌ High overhead</li>
+                      <li>❌ Request/response only</li>
+                    </ul>
+                  </Card>
+                  <Card title="CoAP" icon="🔵">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="4 bytes" label="Header Size" />
+                      <Metric value="2.1%" label="Packet Loss" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ UDP-based, fast</li>
+                      <li>✅ RESTful design</li>
+                      <li>✅ Multicast support</li>
+                      <li>❌ Less reliable</li>
+                      <li>❌ Limited tooling</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">MQTT Performance</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    50x smaller headers than HTTP, 7x lower packet loss than CoAP. Ideal for high-frequency sensor data.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
+
+          {
+            key: 'storageComparison',
+            render: () => (
+              <SlideShell accent="from-white via-indigo-100/60 to-brand-100/60">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <h2 className="text-3xl font-semibold text-slate-900 md:text-4xl">Database Storage Comparison</h2>
+                    <p className="mt-2 text-sm text-slate-600">MongoDB vs InfluxDB vs PostgreSQL for IoT data.</p>
+                  </div>
+                  <IconBadge>🗄️</IconBadge>
+                </div>
+
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                  <Card title="MongoDB (Our Choice)" icon="🍃">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="12K" label="Writes/sec" />
+                      <Metric value="45 ms" label="Query Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Flexible schema</li>
+                      <li>✅ JSON-native storage</li>
+                      <li>✅ Horizontal scaling</li>
+                      <li>✅ Rich aggregation</li>
+                      <li>⚠️ Memory intensive</li>
+                    </ul>
+                  </Card>
+                  <Card title="InfluxDB" icon="📈">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="25K" label="Writes/sec" />
+                      <Metric value="23 ms" label="Query Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ Time-series optimized</li>
+                      <li>✅ High write throughput</li>
+                      <li>✅ Built-in compression</li>
+                      <li>❌ Limited flexibility</li>
+                      <li>❌ Steep learning curve</li>
+                    </ul>
+                  </Card>
+                  <Card title="PostgreSQL" icon="🐘">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Metric value="8K" label="Writes/sec" />
+                      <Metric value="67 ms" label="Query Time" />
+                    </div>
+                    <ul className="space-y-2">
+                      <li>✅ ACID compliance</li>
+                      <li>✅ SQL familiarity</li>
+                      <li>✅ JSON support</li>
+                      <li>❌ Vertical scaling</li>
+                      <li>❌ Complex maintenance</li>
+                    </ul>
+                  </Card>
+                </div>
+
+                <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">Why MongoDB?</div>
+                  <div className="mt-2 text-sm text-slate-600">
+                    Best balance of flexibility, JSON-native storage, and scaling for diverse IoT sensor data types.
+                  </div>
+                </div>
+              </SlideShell>
+            )
+          },
         ];
       }, [scenario]);
 
